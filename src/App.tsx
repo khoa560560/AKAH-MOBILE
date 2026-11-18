@@ -804,32 +804,28 @@ function Home({ navigate, viewProduct, addToCart }: PageActions) {
           title="Hãng điện thoại nổi bật"
           subtitle="Khám phá điện thoại theo thương hiệu bạn yêu thích"
         />
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+        <div className="grid gap-3 sm:grid-cols-3 lg:gap-5">
           {[
-            ["Apple", "Đẳng cấp và tinh tế", Apple],
-            ["Samsung", "Công nghệ dẫn đầu", Smartphone],
-            ["Xiaomi", "Hiệu năng vượt trội", Zap],
-            ["OPPO", "Camera chân dung đẹp", Sparkles],
-            ["realme", "Cấu hình mạnh, giá tốt", BatteryCharging],
-            ["vivo", "Thiết kế trẻ trung", Phone],
-          ].map(([title, text, Icon], index) => (
+            { title: "Apple", text: "Đẳng cấp và tinh tế", Icon: Apple },
+            { title: "Samsung", text: "Công nghệ dẫn đầu", Icon: Smartphone },
+            { title: "Xiaomi", text: "Hiệu năng vượt trội", Icon: Zap },
+          ].map(({ title, text, Icon }) => (
             <button
-              key={title as string}
-              onClick={() => navigate(`phones:${title as string}`)}
-              className="group relative min-h-44 overflow-hidden rounded-2xl border border-slate-100 bg-white p-5 text-left shadow-[0_8px_30px_rgba(15,23,42,.05)] transition duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_16px_35px_rgba(37,99,235,.12)]"
+              key={title}
+              onClick={() => navigate(`phones:${title}`)}
+              className="group flex items-center gap-4 rounded-2xl border border-slate-100 bg-linear-to-br from-blue-50/70 via-white to-white p-4 text-left shadow-[0_8px_30px_rgba(15,23,42,.05)] transition duration-300 hover:border-blue-200 hover:shadow-[0_16px_35px_rgba(37,99,235,.12)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 sm:flex-col sm:items-start sm:p-5 lg:p-6 motion-safe:hover:-translate-y-1"
             >
-              <span className="grid size-11 place-items-center rounded-xl bg-blue-50 text-blue-600 transition group-hover:bg-blue-600 group-hover:text-white">
-                <Icon size={22} strokeWidth={1.8} />
+              <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-blue-100/75 text-blue-600 transition group-hover:bg-blue-600 group-hover:text-white lg:size-14">
+                <Icon size={24} strokeWidth={1.8} />
               </span>
-              <span className="absolute right-4 top-4 text-5xl font-black text-slate-50 transition group-hover:text-blue-50">
-                {index + 1}
-              </span>
-              <h3 className="mt-6 text-base font-extrabold text-slate-950">{title as string}</h3>
-              <p className="mt-1 min-h-8 text-xs leading-4 text-slate-500">{text as string}</p>
-              <span className="mt-4 flex items-center gap-1 text-xs font-bold text-blue-600">
-                Xem điện thoại
-                <ArrowRight size={14} className="transition group-hover:translate-x-1" />
-              </span>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-lg font-extrabold text-slate-950">{title}</h3>
+                <p className="mt-1 text-sm text-slate-500">{text}</p>
+                <span className="mt-3 flex items-center gap-1 text-xs font-bold text-blue-600">
+                  Xem điện thoại
+                  <ArrowRight size={14} className="transition group-hover:translate-x-1" />
+                </span>
+              </div>
             </button>
           ))}
         </div>
