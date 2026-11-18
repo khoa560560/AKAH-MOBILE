@@ -1,4 +1,12 @@
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -40,19 +48,7 @@ import {
   Zap,
 } from "lucide-react";
 
-type Product = {
-  id: number;
-  name: string;
-  brand: string;
-  category: "Điện thoại" | "Phụ kiện";
-  subcategory?: string;
-  price: number;
-  oldPrice: number;
-  image: string;
-  badge: string;
-  rating: number;
-  specs: string[];
-};
+import { filterArchive, useStorefront, type Product } from "./storefront";
 
 type CartLine = Product & { qty: number };
 
@@ -363,27 +359,85 @@ function SectionTitle({
   );
 }
 
+function NativeSlot({ name }: { name: string }) {
+  const target = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const content = document.getElementById(`akah-native-${name}`);
+    const source = content?.parentElement;
+    if (!content || !source || !target.current) return;
+    target.current.append(content);
+    return () => {
+      source.append(content);
+    };
+  }, [name]);
+  return <div ref={target} />;
+}
+
+function ProductPrice({ product }: { product: Product }) {
+  if (product.priceHtml !== undefined) {
+    // The theme sanitizes WooCommerce price markup before serializing it.
+    return <span dangerouslySetInnerHTML={{ __html: product.priceHtml }} />;
+  }
+  return <>{money(product.price)}</>;
+}
+
 function App() {
-  const [route, setRoute] = useState("home");
-  const [selected, setSelected] = useState<Product>(products[0]);
+  const store = useStorefront();
+  const [route, setRoute] = useState(store?.route ?? "home");
+  const [selected, setSelected] = useState<Product>(store?.selected ?? products[0]);
   const [cart, setCart] = useState<CartLine[]>([
     { ...products[1], qty: 1 },
     { ...products[7], qty: 1 },
   ]);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(store?.query ?? "");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [toast, setToast] = useState("");
 
   const navigate = (next: string) => {
+    if (store) {
+      if (next === "search") {
+        const url = new URL(store.urls.search);
+        url.searchParams.set("s", query.trim());
+        window.location.assign(url);
+      } else {
+        window.location.assign(store.urls[next] ?? store.urls.home);
+      }
+      return;
+    }
     setRoute(next);
     setMobileOpen(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
   const viewProduct = (product: Product) => {
+    if (product.url) {
+      window.location.assign(product.url);
+      return;
+    }
     setSelected(product);
     navigate("product");
   };
   const addToCart = (product: Product, go = false) => {
+    if (store && product.url) {
+      if (!product.quickAdd) {
+        viewProduct(product);
+        return;
+      }
+      const form = document.createElement("form");
+      form.method = "post";
+      form.action = product.url;
+      const id = document.createElement("input");
+      id.type = "hidden";
+      id.name = "add-to-cart";
+      id.value = String(product.id);
+      const quickAdd = document.createElement("input");
+      quickAdd.type = "hidden";
+      quickAdd.name = "akah_quick_add";
+      quickAdd.value = "1";
+      form.append(id, quickAdd);
+      document.body.append(form);
+      form.submit();
+      return;
+    }
     setCart((current) =>
       current.some((p) => p.id === product.id)
         ? current.map((p) => (p.id === product.id ? { ...p, qty: p.qty + 1 } : p))
@@ -393,7 +447,26 @@ function App() {
     window.setTimeout(() => setToast(""), 2400);
     if (go) navigate("cart");
   };
-  const cartCount = cart.reduce((sum, p) => sum + p.qty, 0);
+  const [wooCartCount, setWooCartCount] = useState(store?.cartCount ?? 0);
+  useEffect(() => {
+    if (!store) return;
+    const read = () => {
+      const count = document.getElementById("akah-cart-count")?.dataset.count;
+      if (count !== undefined) setWooCartCount(Number(count));
+    };
+    const state = document.getElementById("akah-cart-state");
+    if (!state) return;
+    const observer = new MutationObserver(read);
+    observer.observe(state, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["data-count"],
+    });
+    read();
+    return () => observer.disconnect();
+  }, [store]);
+  const cartCount = store ? wooCartCount : cart.reduce((sum, p) => sum + p.qty, 0);
 
   return (
     <div className="min-h-screen bg-white text-slate-900">
@@ -406,11 +479,25 @@ function App() {
         mobileOpen={mobileOpen}
         setMobileOpen={setMobileOpen}
       />
-      <main>
+      <main id={store ? "akah-main" : undefined}>
+        {store && <NativeSlot name="notices" />}
+        {store?.archive && (
+          <Catalog
+            category={store.archive.category}
+            navigate={navigate}
+            viewProduct={viewProduct}
+            addToCart={addToCart}
+          />
+        )}
+        {store && route === "native" && (
+          <PageWrap>
+            <NativeSlot name="content" />
+          </PageWrap>
+        )}
         {route === "home" && (
           <Home navigate={navigate} viewProduct={viewProduct} addToCart={addToCart} />
         )}
-        {route.startsWith("phones") && (
+        {!store && route.startsWith("phones") && (
           <Catalog
             key={route}
             category="Điện thoại"
@@ -420,7 +507,7 @@ function App() {
             addToCart={addToCart}
           />
         )}
-        {route.startsWith("accessories") && (
+        {!store && route.startsWith("accessories") && (
           <Catalog
             key={route}
             category="Phụ kiện"
@@ -447,11 +534,13 @@ function App() {
             addToCart={addToCart}
           />
         )}
-        {route === "cart" && <CartPage cart={cart} setCart={setCart} navigate={navigate} />}
-        {route === "checkout" && <Checkout cart={cart} navigate={navigate} />}
-        {route === "success" && <OrderSuccess navigate={navigate} />}
-        {route === "login" && <Auth navigate={navigate} />}
-        {route === "account" && <Account navigate={navigate} />}
+        {!store && route === "cart" && (
+          <CartPage cart={cart} setCart={setCart} navigate={navigate} />
+        )}
+        {!store && route === "checkout" && <Checkout cart={cart} navigate={navigate} />}
+        {!store && route === "success" && <OrderSuccess navigate={navigate} />}
+        {!store && route === "login" && <Auth navigate={navigate} />}
+        {!store && route === "account" && <Account navigate={navigate} />}
         {route === "about" && <About navigate={navigate} />}
         {route === "contact" && <Contact />}
         {route.startsWith("policy-") && (
@@ -486,6 +575,7 @@ function Header({
   mobileOpen: boolean;
   setMobileOpen: (v: boolean) => void;
 }) {
+  const useAccountInMobile = Boolean(useStorefront());
   const submitSearch = (e: FormEvent) => {
     e.preventDefault();
     navigate("search");
@@ -525,6 +615,7 @@ function Header({
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              aria-label="Tìm kiếm sản phẩm"
               placeholder="Bạn cần tìm điện thoại, phụ kiện gì?"
               className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-11 pr-4 text-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50"
             />
@@ -538,6 +629,7 @@ function Header({
           </button>
           <button
             onClick={() => navigate("cart")}
+            aria-label="Giỏ hàng"
             className="relative flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
           >
             <ShoppingBag size={22} />
@@ -549,6 +641,8 @@ function Header({
             )}
           </button>
           <button
+            aria-label="Menu"
+            aria-expanded={mobileOpen}
             onClick={() => setMobileOpen(!mobileOpen)}
             className="rounded-lg p-2 text-slate-800 lg:hidden"
           >
@@ -581,6 +675,7 @@ function Header({
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
+                aria-label="Tìm kiếm sản phẩm"
                 placeholder="Tìm kiếm sản phẩm..."
                 className="h-11 w-full rounded-xl bg-slate-50 pl-10 pr-4 text-sm outline-none"
               />
@@ -595,6 +690,14 @@ function Header({
                   {label}
                 </button>
               ))}
+              {useAccountInMobile && (
+                <button
+                  onClick={() => navigate("login")}
+                  className="rounded-lg px-3 py-2 text-left text-sm font-semibold text-slate-700 sm:hidden"
+                >
+                  Tài khoản
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -604,6 +707,7 @@ function Header({
 }
 
 function Home({ navigate, viewProduct, addToCart }: PageActions) {
+  const store = useStorefront();
   return (
     <>
       <section className="overflow-hidden bg-[#EFF6FF]">
@@ -648,7 +752,10 @@ function Home({ navigate, viewProduct, addToCart }: PageActions) {
             <div className="absolute -inset-10 rounded-full bg-blue-300/25 blur-3xl" />
             <div className="relative overflow-hidden rounded-[2rem] border-8 border-white bg-slate-900 shadow-[0_30px_70px_rgba(15,23,42,.22)]">
               <img
-                src="https://images.unsplash.com/photo-1707438095940-1eee18e85400?auto=format&fit=crop&w=1200&q=90"
+                src={
+                  store?.heroImage ||
+                  "https://images.unsplash.com/photo-1707438095940-1eee18e85400?auto=format&fit=crop&w=1200&q=90"
+                }
                 alt="Bộ sưu tập smartphone cao cấp"
                 className="aspect-[4/3] w-full object-cover"
               />
@@ -757,7 +864,7 @@ function Home({ navigate, viewProduct, addToCart }: PageActions) {
           }
         />
         <ProductGrid
-          products={products.slice(0, 6)}
+          products={store?.products ?? products.slice(0, 6)}
           viewProduct={viewProduct}
           addToCart={addToCart}
         />
@@ -823,9 +930,11 @@ function ProductGrid({
               alt={product.name}
               className="aspect-square w-full object-cover transition duration-500 group-hover:scale-105"
             />
-            <span className="absolute left-2 top-2 rounded-lg bg-blue-600 px-2 py-1 text-[10px] font-bold text-white">
-              {product.badge}
-            </span>
+            {product.badge && (
+              <span className="absolute left-2 top-2 rounded-lg bg-blue-600 px-2 py-1 text-[10px] font-bold text-white">
+                {product.badge}
+              </span>
+            )}
             <span className="absolute right-2 top-2 grid size-8 place-items-center rounded-full bg-white/90 text-slate-500">
               <Heart size={15} />
             </span>
@@ -848,10 +957,12 @@ function ProductGrid({
               ))}
             </div>
             <div className="mt-auto pt-4">
-              <p className="text-base font-black text-blue-600">{money(product.price)}</p>
+              <p className="text-base font-black text-blue-600">
+                <ProductPrice product={product} />
+              </p>
               <div className="mt-1 flex items-center justify-between">
                 <span className="text-[11px] text-slate-400 line-through">
-                  {money(product.oldPrice)}
+                  {product.priceHtml === undefined ? money(product.oldPrice) : ""}
                 </span>
                 <span className="flex items-center gap-1 text-[10px] font-bold text-amber-500">
                   <Star size={11} fill="currentColor" />
@@ -863,7 +974,8 @@ function ProductGrid({
               onClick={() => addToCart(product)}
               className="mt-3 flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 text-xs font-bold text-white transition hover:bg-blue-600"
             >
-              <ShoppingCart size={14} /> Thêm vào giỏ
+              <ShoppingCart size={14} />{" "}
+              {product.quickAdd === false ? "Xem sản phẩm" : "Thêm vào giỏ"}
             </button>
           </div>
         </article>
@@ -880,10 +992,12 @@ function Catalog({
   viewProduct,
   addToCart,
 }: PageActions & {
-  category: Product["category"];
+  category: string;
   initialBrand?: string;
   initialSubcategory?: string;
 }) {
+  const store = useStorefront();
+  const archive = store?.archive;
   const [brand, setBrand] = useState(initialBrand || "Tất cả");
   const [subcategory, setSubcategory] = useState(initialSubcategory || "Tất cả");
   const [price, setPrice] = useState("Tất cả");
@@ -909,7 +1023,21 @@ function Catalog({
     if (sort === "Giá cao") found.sort((a, b) => b.price - a.price);
     return found;
   }, [brand, subcategory, price, sort, category]);
-  const pageTitle = initialBrand || initialSubcategory || category;
+  const pageTitle = archive?.title || initialBrand || initialSubcategory || category;
+  const visibleProducts = store?.products ?? list;
+  const sortOrders = ["Nổi bật", "Giá thấp", "Giá cao"];
+  const sortValues = ["", "price", "price-desc"];
+  const priceRanges = ["Tất cả", "Dưới 10 triệu", "10 - 20 triệu", "Trên 20 triệu"];
+  const priceBounds = [
+    ["", ""],
+    ["", "9999999"],
+    ["10000000", "20000000"],
+    ["20000001", ""],
+  ];
+  const changePrice = (value: string) => {
+    const [min, max] = priceBounds[priceRanges.indexOf(value)];
+    filterArchive("min_price", { min_price: min, max_price: max });
+  };
   return (
     <PageWrap>
       <Breadcrumb
@@ -935,8 +1063,13 @@ function Catalog({
           <Filter
             title="Thương hiệu"
             options={["Tất cả", ...brands]}
-            value={brand}
-            setValue={setBrand}
+            value={archive?.brand || brand}
+            setValue={
+              archive
+                ? (value) =>
+                    filterArchive("akah_brand", { akah_brand: value === "Tất cả" ? "" : value })
+                : setBrand
+            }
           />
           {category === "Phụ kiện" && (
             <Filter
@@ -950,27 +1083,42 @@ function Catalog({
                 "Loa bluetooth",
                 "Đồng hồ thông minh",
               ]}
-              value={subcategory}
-              setValue={setSubcategory}
+              value={archive ? (pageTitle === category ? "Tất cả" : pageTitle) : subcategory}
+              setValue={
+                archive
+                  ? (value) => navigate(value === "Tất cả" ? "accessories" : `accessories:${value}`)
+                  : setSubcategory
+              }
             />
           )}
-          <Filter
-            title="Khoảng giá"
-            options={["Tất cả", "Dưới 10 triệu", "10 - 20 triệu", "Trên 20 triệu"]}
-            value={price}
-            setValue={setPrice}
-          />
+          {(!archive || archive.usesVnd) && (
+            <Filter
+              title="Khoảng giá"
+              options={priceRanges}
+              value={archive?.price || price}
+              setValue={archive ? changePrice : setPrice}
+            />
+          )}
         </aside>
         <div>
           <div className="mb-5 flex items-center justify-between">
             <p className="text-sm text-slate-500">
-              Tìm thấy <strong className="text-slate-900">{list.length}</strong> sản phẩm
+              Tìm thấy <strong className="text-slate-900">{store?.total ?? list.length}</strong> sản
+              phẩm
             </p>
             <label className="flex items-center gap-2 text-sm text-slate-500">
               Sắp xếp:
               <select
-                value={sort}
-                onChange={(e) => setSort(e.target.value)}
+                value={
+                  archive ? (sortOrders[sortValues.indexOf(archive.sort)] ?? sortOrders[0]) : sort
+                }
+                onChange={(e) =>
+                  archive
+                    ? filterArchive("orderby", {
+                        orderby: sortValues[sortOrders.indexOf(e.target.value)],
+                      })
+                    : setSort(e.target.value)
+                }
                 className="rounded-lg border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-800 outline-none"
               >
                 <option>Nổi bật</option>
@@ -979,12 +1127,17 @@ function Catalog({
               </select>
             </label>
           </div>
-          {loading ? (
+          {!store && loading ? (
             <LoadingGrid />
           ) : (
-            <ProductGrid products={list} viewProduct={viewProduct} addToCart={addToCart} />
+            <ProductGrid
+              products={visibleProducts}
+              viewProduct={viewProduct}
+              addToCart={addToCart}
+            />
           )}
-          {list.length > 0 && (
+          {store && <Pagination />}
+          {!store && list.length > 0 && (
             <div className="mt-9 flex justify-center gap-2">
               {[1, 2, 3].map((n) => (
                 <button
@@ -999,6 +1152,25 @@ function Catalog({
         </div>
       </div>
     </PageWrap>
+  );
+}
+
+function Pagination() {
+  const store = useStorefront();
+  if (!store?.pagination.length) return null;
+  return (
+    <nav aria-label="Phân trang sản phẩm" className="mt-9 flex justify-center gap-2">
+      {store.pagination.map(({ label, url, current }) => (
+        <a
+          key={label}
+          href={url}
+          aria-current={current ? "page" : undefined}
+          className={`grid size-10 place-items-center rounded-lg text-sm font-bold ${current ? "bg-blue-600 text-white" : "border border-slate-200 text-slate-600"}`}
+        >
+          {label}
+        </a>
+      ))}
+    </nav>
   );
 }
 
@@ -1057,6 +1229,7 @@ function ProductDetail({
   viewProduct,
   addToCart,
 }: PageActions & { product: Product }) {
+  const store = useStorefront();
   const [color, setColor] = useState("Đen Titan");
   const [storage, setStorage] = useState("256GB");
   const [image, setImage] = useState(product.image);
@@ -1070,7 +1243,7 @@ function ProductDetail({
             <img src={image} alt={product.name} className="aspect-square w-full object-cover" />
           </div>
           <div className="mt-3 grid grid-cols-4 gap-3">
-            {[product.image, ...phoneImages.slice(1, 4)].map((img, i) => (
+            {(product.gallery ?? [product.image, ...phoneImages.slice(1, 4)]).map((img, i) => (
               <button
                 key={img}
                 onClick={() => setImage(img)}
@@ -1087,46 +1260,62 @@ function ProductDetail({
         </div>
         <div>
           <div className="flex items-center gap-3">
-            <span className="rounded-lg bg-blue-600 px-2.5 py-1 text-xs font-bold text-white">
-              {product.badge}
-            </span>
+            {product.badge && (
+              <span className="rounded-lg bg-blue-600 px-2.5 py-1 text-xs font-bold text-white">
+                {product.badge}
+              </span>
+            )}
             <span className="flex items-center gap-1 text-sm font-bold text-amber-500">
               <Star size={15} fill="currentColor" /> {product.rating}{" "}
-              <span className="font-normal text-slate-400">(128 đánh giá)</span>
+              <span className="font-normal text-slate-400">
+                ({product.reviewCount ?? 128} đánh giá)
+              </span>
             </span>
           </div>
           <h1 className="mt-4 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
             {product.name}
           </h1>
           <div className="mt-6 rounded-2xl bg-blue-50 p-5">
-            <p className="text-3xl font-black text-blue-600">{money(product.price)}</p>
-            <p className="mt-1 text-sm text-slate-400">
-              <span className="line-through">{money(product.oldPrice)}</span>{" "}
-              <span className="ml-2 font-bold text-emerald-600">
-                Tiết kiệm {money(product.oldPrice - product.price)}
-              </span>
+            <p className="text-3xl font-black text-blue-600">
+              <ProductPrice product={product} />
             </p>
+            {!store && (
+              <p className="mt-1 text-sm text-slate-400">
+                <span className="line-through">{money(product.oldPrice)}</span>{" "}
+                <span className="ml-2 font-bold text-emerald-600">
+                  Tiết kiệm {money(product.oldPrice - product.price)}
+                </span>
+              </p>
+            )}
           </div>
-          <Option
-            title="Màu sắc"
-            options={["Đen Titan", "Trắng", "Xanh sa mạc"]}
-            value={color}
-            setValue={setColor}
-          />
-          <Option
-            title="Bộ nhớ"
-            options={["256GB", "512GB", "1TB"]}
-            value={storage}
-            setValue={setStorage}
-          />
-          <div className="mt-7 grid gap-3 sm:grid-cols-2">
-            <Button className="w-full" onClick={() => addToCart(product)}>
-              <ShoppingCart size={18} /> Thêm vào giỏ
-            </Button>
-            <Button className="w-full" kind="dark" onClick={() => addToCart(product, true)}>
-              Mua ngay <ArrowRight size={17} />
-            </Button>
-          </div>
+          {store ? (
+            <div className="akah-purchase product mt-6">
+              <NativeSlot name="purchase" />
+            </div>
+          ) : (
+            <>
+              <Option
+                title="Màu sắc"
+                options={["Đen Titan", "Trắng", "Xanh sa mạc"]}
+                value={color}
+                setValue={setColor}
+              />
+              <Option
+                title="Bộ nhớ"
+                options={["256GB", "512GB", "1TB"]}
+                value={storage}
+                setValue={setStorage}
+              />
+              <div className="mt-7 grid gap-3 sm:grid-cols-2">
+                <Button className="w-full" onClick={() => addToCart(product)}>
+                  <ShoppingCart size={18} /> Thêm vào giỏ
+                </Button>
+                <Button className="w-full" kind="dark" onClick={() => addToCart(product, true)}>
+                  Mua ngay <ArrowRight size={17} />
+                </Button>
+              </div>
+            </>
+          )}
           <div className="mt-6 grid grid-cols-2 gap-3 text-xs font-semibold text-slate-600">
             <span className="flex items-center gap-2 rounded-xl border border-slate-100 p-3">
               <ShieldCheck className="text-blue-600" size={18} /> Bảo hành 12 tháng
@@ -1137,32 +1326,42 @@ function ProductDetail({
           </div>
         </div>
       </div>
-      <section className="mt-16 rounded-3xl border border-slate-100 p-6 md:p-9">
-        <SectionTitle title="Thông số nổi bật" />
-        <div className="grid gap-3 md:grid-cols-2">
-          {[
-            ["Màn hình", product.specs[0]],
-            ["Vi xử lý", product.specs[1]],
-            ["Bộ nhớ", product.specs[2]],
-            ["Pin & sạc", "4.685mAh, sạc nhanh"],
-            ["Camera sau", "48MP + 48MP + 12MP"],
-            ["Hệ điều hành", "Phiên bản mới nhất"],
-          ].map(([k, v]) => (
-            <div key={k} className="flex justify-between rounded-xl bg-slate-50 px-4 py-3 text-sm">
-              <span className="text-slate-500">{k}</span>
-              <strong>{v}</strong>
-            </div>
-          ))}
-        </div>
-      </section>
-      <section className="mt-16">
-        <SectionTitle title="Có thể bạn cũng thích" />
-        <ProductGrid
-          products={products.filter((p) => p.id !== product.id).slice(0, 5)}
-          viewProduct={viewProduct}
-          addToCart={addToCart}
-        />
-      </section>
+      {(!store || Boolean(product.attributes?.length)) && (
+        <section className="mt-16 rounded-3xl border border-slate-100 p-6 md:p-9">
+          <SectionTitle title="Thông số nổi bật" />
+          <div className="grid gap-3 md:grid-cols-2">
+            {(
+              product.attributes ?? [
+                ["Màn hình", product.specs[0]],
+                ["Vi xử lý", product.specs[1]],
+                ["Bộ nhớ", product.specs[2]],
+                ["Pin & sạc", "4.685mAh, sạc nhanh"],
+                ["Camera sau", "48MP + 48MP + 12MP"],
+                ["Hệ điều hành", "Phiên bản mới nhất"],
+              ]
+            ).map(([k, v]) => (
+              <div
+                key={k}
+                className="flex justify-between rounded-xl bg-slate-50 px-4 py-3 text-sm"
+              >
+                <span className="text-slate-500">{k}</span>
+                <strong>{v}</strong>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+      {store && <NativeSlot name="description" />}
+      {(!store || store.products.length > 0) && (
+        <section className="mt-16">
+          <SectionTitle title="Có thể bạn cũng thích" />
+          <ProductGrid
+            products={store?.products ?? products.filter((p) => p.id !== product.id).slice(0, 5)}
+            viewProduct={viewProduct}
+            addToCart={addToCart}
+          />
+        </section>
+      )}
     </PageWrap>
   );
 }
@@ -1205,34 +1404,51 @@ function SearchPage({
   viewProduct,
   addToCart,
 }: PageActions & { query: string; setQuery: (v: string) => void }) {
-  const result = products.filter((p) =>
-    `${p.name} ${p.brand}`.toLowerCase().includes(query.toLowerCase()),
-  );
+  const store = useStorefront();
+  const searched = store?.query ?? query;
+  const result =
+    store?.products ??
+    products.filter((p) => `${p.name} ${p.brand}`.toLowerCase().includes(query.toLowerCase()));
   return (
     <PageWrap>
       <Breadcrumb items={["Trang chủ", "Tìm kiếm"]} navigate={navigate} />
       <h1 className="text-3xl font-black">Tìm kiếm sản phẩm</h1>
-      <div className="relative mt-6 max-w-2xl">
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          navigate("search");
+        }}
+        className="relative mt-6 max-w-2xl"
+      >
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
         <input
           autoFocus
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="h-14 w-full rounded-2xl border border-slate-200 pl-12 pr-4 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-50"
+          className={`h-14 w-full rounded-2xl border border-slate-200 pl-12 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-50 ${store ? "pr-20" : "pr-4"}`}
+          aria-label="Từ khóa tìm kiếm"
           placeholder="Nhập tên điện thoại hoặc thương hiệu..."
         />
-      </div>
+        {store && (
+          <button
+            type="submit"
+            className="absolute inset-y-2 right-2 rounded-xl bg-blue-600 px-4 text-sm font-bold text-white"
+          >
+            Tìm
+          </button>
+        )}
+      </form>
       <p className="my-7 text-sm text-slate-500">
-        {query ? (
+        {searched ? (
           <>
-            Kết quả cho “<strong className="text-slate-900">{query}</strong>” — {result.length} sản
-            phẩm
+            Kết quả cho “<strong className="text-slate-900">{searched}</strong>” —{" "}
+            {store?.total ?? result.length} sản phẩm
           </>
         ) : (
           "Nhập từ khóa để bắt đầu tìm kiếm."
         )}
       </p>
-      {query ? (
+      {searched ? (
         <ProductGrid products={result} viewProduct={viewProduct} addToCart={addToCart} />
       ) : (
         <StatePanel
@@ -1241,6 +1457,7 @@ function SearchPage({
           text="Gợi ý: iPhone, Samsung, tai nghe hoặc sạc nhanh."
         />
       )}
+      <Pagination />
     </PageWrap>
   );
 }
@@ -1690,6 +1907,7 @@ function About({ navigate }: { navigate: (r: string) => void }) {
 }
 
 function Contact() {
+  const store = useStorefront();
   const [sent, setSent] = useState(false);
   return (
     <PageWrap>
@@ -1725,7 +1943,9 @@ function Contact() {
         </div>
         <div className="rounded-3xl border border-slate-100 p-6 shadow-xl shadow-slate-100">
           <h2 className="text-xl font-extrabold">Gửi yêu cầu hỗ trợ</h2>
-          {sent ? (
+          {store ? (
+            <NativeSlot name="contact" />
+          ) : sent ? (
             <StatePanel
               type="success"
               title="Đã gửi yêu cầu"
@@ -1863,6 +2083,7 @@ function PageWrap({ children }: { children: ReactNode }) {
 }
 
 function Footer({ navigate }: { navigate: (r: string) => void }) {
+  const store = useStorefront();
   const policies = Object.entries(policyContent);
   return (
     <footer className="bg-slate-950 text-slate-300">
@@ -1920,7 +2141,8 @@ function Footer({ navigate }: { navigate: (r: string) => void }) {
       <div className="border-t border-white/10">
         <div className="mx-auto flex max-w-7xl flex-col justify-between gap-3 px-4 py-5 text-xs text-slate-500 sm:flex-row lg:px-8">
           <span>
-            © 2025 AKAH MOBILE. Dữ liệu và giao dịch trong prototype chỉ mang tính minh họa.
+            © 2025 AKAH MOBILE.
+            {!store && " Dữ liệu và giao dịch trong prototype chỉ mang tính minh họa."}
           </span>
           <span>Thiết kế tại Việt Nam</span>
         </div>
