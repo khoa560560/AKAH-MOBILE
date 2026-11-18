@@ -102,3 +102,50 @@ add_filter( 'gettext_woocommerce', function ( $translated, $source ) {
 	);
 	return $labels[ $source ] ?? $translated;
 }, 10, 2 );
+
+// Render the same WooCommerce cart form for block and shortcode pages while preserving nearby content.
+add_filter( 'render_block_woocommerce/cart', function ( $content ) {
+	return is_cart() ? do_shortcode( '[woocommerce_cart]' ) : $content;
+} );
+
+/** Add controls only to quantities rendered by the cart form. */
+add_action( 'woocommerce_before_quantity_input_field', function () {
+	if ( is_cart() ) {
+		echo '<button type="button" class="akah-quantity-step" data-step="-1" aria-label="Giảm số lượng">−</button>';
+	}
+} );
+
+add_action( 'woocommerce_after_quantity_input_field', function () {
+	if ( is_cart() ) {
+		echo '<button type="button" class="akah-quantity-step" data-step="1" aria-label="Tăng số lượng">+</button>';
+	}
+} );
+
+add_action( 'woocommerce_after_cart_totals', function () {
+	printf(
+		'<a class="akah-continue-shopping" href="%s"><span aria-hidden="true">←</span> Tiếp tục mua sắm</a>',
+		esc_url( apply_filters( 'woocommerce_return_to_shop_redirect', wc_get_page_permalink( 'shop' ) ) )
+	);
+} );
+
+add_filter( 'gettext_woocommerce', function ( $translated, $source ) {
+	if ( ! ( did_action( 'wp' ) && function_exists( 'is_cart' ) && is_cart() ) && 'get_cart_totals' !== akah_parameter( 'wc-ajax' ) ) {
+		return $translated;
+	}
+	$labels = array(
+		'Cart totals'              => 'Tóm tắt đơn hàng',
+		'Cart updated.'            => 'Đã cập nhật giỏ hàng.',
+		'View cart'                => 'Xem giỏ hàng',
+		'Subtotal'                 => 'Tạm tính',
+		'Shipping'                 => 'Phí vận chuyển',
+		'Total'                    => 'Tổng cộng',
+		'Proceed to checkout'      => 'Tiến hành thanh toán',
+		'Update cart'              => 'Cập nhật giỏ hàng',
+		'Apply coupon'             => 'Áp dụng',
+		'Coupon code'              => 'Mã giảm giá',
+		'Coupon:'                  => 'Mã giảm giá:',
+		'Remove %s from cart'      => 'Xóa %s khỏi giỏ hàng',
+		'Available on backorder'   => 'Có thể đặt trước',
+	);
+	return $labels[ $source ] ?? $translated;
+}, 10, 2 );

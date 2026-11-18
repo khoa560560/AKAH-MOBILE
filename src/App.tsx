@@ -534,6 +534,16 @@ function App() {
             addToCart={addToCart}
           />
         )}
+        {store && route === "woo-cart" && (
+          <PageWrap>
+            <Breadcrumb items={["Trang chủ", "Giỏ hàng"]} navigate={navigate} />
+            <h1 className="mb-8 text-3xl font-black">
+              Giỏ hàng{" "}
+              <span className="text-base font-medium text-slate-400">({cartCount} sản phẩm)</span>
+            </h1>
+            <NativeSlot name="cart" />
+          </PageWrap>
+        )}
         {!store && route === "cart" && (
           <CartPage cart={cart} setCart={setCart} navigate={navigate} />
         )}

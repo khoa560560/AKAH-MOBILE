@@ -66,3 +66,31 @@ function connectBlockCartCount() {
   data.subscribe(sync, "wc/store/cart");
 }
 window.addEventListener("load", connectBlockCartCount, { once: true });
+
+// Use WooCommerce's cart submit button so stock validation and totals stay native.
+document.addEventListener("click", (event) => {
+  if (!(event.target instanceof Element)) return;
+  const control = event.target.closest<HTMLButtonElement>(".akah-cart .akah-quantity-step");
+  const quantity = control?.closest(".quantity")?.querySelector<HTMLInputElement>("input.qty");
+  const form = control?.closest<HTMLFormElement>(".woocommerce-cart-form");
+  const submit = form?.querySelector<HTMLButtonElement>('button[name="update_cart"]');
+  if (
+    !control ||
+    !quantity ||
+    quantity.step === "any" ||
+    !submit ||
+    form?.classList.contains("processing")
+  )
+    return;
+
+  const previous = quantity.value;
+  if (control.dataset.step === "-1") {
+    if (quantity.valueAsNumber <= Math.max(1, Number(quantity.min))) return;
+    quantity.stepDown();
+  } else {
+    quantity.stepUp();
+  }
+  if (previous === quantity.value) return;
+  quantity.dispatchEvent(new Event("change", { bubbles: true }));
+  submit.click();
+});

@@ -36,6 +36,15 @@ $data = akah_storefront_data();
 			<?php endwhile; ?>
 			<?php if ( ! is_singular() ) { the_posts_pagination(); } ?>
 		</div>
+	<?php elseif ( 'woo-cart' === $data['route'] ) : ?>
+		<div id="akah-native-cart" class="akah-native akah-cart">
+			<?php
+			if ( have_posts() ) {
+				the_post();
+				the_content();
+			}
+			?>
+		</div>
 	<?php elseif ( 'product' === $data['route'] ) : ?>
 		<?php the_post(); ?>
 		<div id="akah-native-purchase" class="woocommerce"><?php woocommerce_template_single_add_to_cart(); ?></div>
@@ -59,7 +68,7 @@ $data = akah_storefront_data();
 			?>
 		</div>
 	<?php endif; ?>
-	<?php if ( ! in_array( $data['route'], array( 'native', 'login', 'woo-account' ), true ) && function_exists( 'wc_output_all_notices' ) ) : ?>
+	<?php if ( ! in_array( $data['route'], array( 'native', 'login', 'woo-account', 'woo-cart' ), true ) && function_exists( 'wc_output_all_notices' ) ) : ?>
 		<div id="akah-native-notices" class="akah-notices"><?php wc_output_all_notices(); ?></div>
 	<?php endif; ?>
 </div>

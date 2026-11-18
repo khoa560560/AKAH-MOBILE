@@ -257,6 +257,8 @@ function akah_storefront_data() {
 
 	if ( $view ) {
 		$data['route'] = $view;
+	} elseif ( $woo && is_cart() && ! post_password_required() ) {
+		$data['route'] = 'woo-cart';
 	} elseif ( $woo && is_account_page() && ! post_password_required() ) {
 		if ( is_user_logged_in() ) {
 			$data['route'] = 'woo-account';
