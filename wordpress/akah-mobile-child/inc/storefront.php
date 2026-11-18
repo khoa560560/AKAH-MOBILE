@@ -257,6 +257,17 @@ function akah_storefront_data() {
 
 	if ( $view ) {
 		$data['route'] = $view;
+	} elseif ( $woo && is_account_page() && ! post_password_required() ) {
+		if ( is_user_logged_in() ) {
+			$data['route'] = 'woo-account';
+		} elseif ( ! is_wc_endpoint_url() ) {
+			$registration = 'yes' === get_option( 'woocommerce_enable_myaccount_registration' );
+			$data['route'] = 'login';
+			$data['auth'] = array(
+				'canRegister' => $registration,
+				'register'    => $registration && isset( $_POST['register'] ),
+			);
+		}
 	} elseif ( $woo && is_product() && ! post_password_required() ) {
 		$product = wc_get_product( get_queried_object_id() );
 		if ( $product ) {

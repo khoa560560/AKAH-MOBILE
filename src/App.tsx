@@ -539,7 +539,14 @@ function App() {
         )}
         {!store && route === "checkout" && <Checkout cart={cart} navigate={navigate} />}
         {!store && route === "success" && <OrderSuccess navigate={navigate} />}
-        {!store && route === "login" && <Auth navigate={navigate} />}
+        {route === "login" && <Auth navigate={navigate} />}
+        {store && route === "woo-account" && (
+          <PageWrap>
+            <Breadcrumb items={["Trang chủ", "Tài khoản"]} navigate={navigate} />
+            <h1 className="mb-6 text-3xl font-black">Tài khoản của tôi</h1>
+            <NativeSlot name="content" />
+          </PageWrap>
+        )}
         {!store && route === "account" && <Account navigate={navigate} />}
         {route === "about" && <About navigate={navigate} />}
         {route === "contact" && <Contact />}
@@ -1703,13 +1710,22 @@ function OrderSuccess({ navigate }: { navigate: (r: string) => void }) {
 }
 
 function Auth({ navigate }: { navigate: (r: string) => void }) {
-  const [register, setRegister] = useState(false);
+  const store = useStorefront();
+  const [register, setRegister] = useState(store?.auth?.register ?? false);
   return (
     <div className="grid min-h-[700px] lg:grid-cols-2">
       <div className="relative hidden overflow-hidden bg-slate-950 lg:block">
         <img
           src="https://images.unsplash.com/photo-1663245482988-22fad02654e3?auto=format&fit=crop&w=1200&q=88"
           alt="Công nghệ di động"
+          onError={
+            store
+              ? (event) => {
+                  const image = event.currentTarget;
+                  if (image.src !== store.heroImage) image.src = store.heroImage;
+                }
+              : undefined
+          }
           className="h-full w-full object-cover opacity-60"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-blue-900/30" />
@@ -1735,20 +1751,34 @@ function Auth({ navigate }: { navigate: (r: string) => void }) {
           <h1 className="mt-2 text-3xl font-black">
             {register ? "Đăng ký AKAH Member" : "Đăng nhập tài khoản"}
           </h1>
-          <div className="mt-8 space-y-4">
-            {register && <Field label="Họ và tên" name="name" placeholder="Nguyễn Văn An" />}
-            <Field label="Số điện thoại hoặc email" name="login" placeholder="email@example.com" />
-            <Field label="Mật khẩu" name="password" placeholder="••••••••" />
-          </div>
-          <Button className="mt-6 w-full" onClick={() => navigate("account")}>
-            {register ? "Tạo tài khoản" : "Đăng nhập"} <ArrowRight size={17} />
-          </Button>
-          <p className="mt-6 text-center text-sm text-slate-500">
-            {register ? "Đã có tài khoản?" : "Chưa có tài khoản?"}{" "}
-            <button onClick={() => setRegister(!register)} className="font-bold text-blue-600">
-              {register ? "Đăng nhập" : "Đăng ký ngay"}
-            </button>
-          </p>
+          {store ? (
+            <div className="akah-auth mt-8" data-panel={register ? "register" : "login"}>
+              <NativeSlot name="content" />
+            </div>
+          ) : (
+            <>
+              <div className="mt-8 space-y-4">
+                {register && <Field label="Họ và tên" name="name" placeholder="Nguyễn Văn An" />}
+                <Field
+                  label="Số điện thoại hoặc email"
+                  name="login"
+                  placeholder="email@example.com"
+                />
+                <Field label="Mật khẩu" name="password" placeholder="••••••••" />
+              </div>
+              <Button className="mt-6 w-full" onClick={() => navigate("account")}>
+                {register ? "Tạo tài khoản" : "Đăng nhập"} <ArrowRight size={17} />
+              </Button>
+            </>
+          )}
+          {(!store || store.auth?.canRegister) && (
+            <p className="mt-6 text-center text-sm text-slate-500">
+              {register ? "Đã có tài khoản?" : "Chưa có tài khoản?"}{" "}
+              <button onClick={() => setRegister(!register)} className="font-bold text-blue-600">
+                {register ? "Đăng nhập" : "Đăng ký ngay"}
+              </button>
+            </p>
+          )}
         </div>
       </div>
     </div>

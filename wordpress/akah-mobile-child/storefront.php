@@ -19,13 +19,14 @@ $data = akah_storefront_data();
 <a class="akah-skip-link" href="#akah-main">Chuyển tới nội dung</a>
 <div id="akah-app"></div>
 <div id="akah-native-source" hidden>
-	<?php if ( 'native' === $data['route'] ) : ?>
-		<div id="akah-native-content" class="akah-native">
+	<?php if ( in_array( $data['route'], array( 'native', 'login', 'woo-account' ), true ) ) : ?>
+		<div id="akah-native-content" class="akah-native <?php echo 'woo-account' === $data['route'] ? 'akah-account-content' : ''; ?>">
 			<?php if ( is_404() ) : ?>
 				<h1>Không tìm thấy trang</h1>
 				<p><a href="<?php echo esc_url( home_url( '/' ) ); ?>">Về trang chủ</a></p>
 			<?php endif; ?>
 			<?php while ( have_posts() ) : the_post(); ?>
+				<?php if ( 'native' !== $data['route'] ) : the_content(); continue; endif; ?>
 				<article <?php post_class(); ?>>
 					<h1><?php if ( is_singular() ) : the_title(); else : ?>
 						<a href="<?php the_permalink(); ?>"><?php the_title(); ?></a>
@@ -58,7 +59,7 @@ $data = akah_storefront_data();
 			?>
 		</div>
 	<?php endif; ?>
-	<?php if ( 'native' !== $data['route'] && function_exists( 'wc_output_all_notices' ) ) : ?>
+	<?php if ( ! in_array( $data['route'], array( 'native', 'login', 'woo-account' ), true ) && function_exists( 'wc_output_all_notices' ) ) : ?>
 		<div id="akah-native-notices" class="akah-notices"><?php wc_output_all_notices(); ?></div>
 	<?php endif; ?>
 </div>

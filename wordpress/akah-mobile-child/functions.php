@@ -71,3 +71,34 @@ add_filter( 'woocommerce_add_to_cart_redirect', function ( $url ) {
 	}
 	return $url;
 } );
+
+add_filter( 'woocommerce_account_menu_items', function ( $items ) {
+	$labels = array(
+		'dashboard'       => 'Tổng quan',
+		'orders'          => 'Đơn hàng của tôi',
+		'downloads'       => 'Tệp tải xuống',
+		'edit-address'    => 'Sổ địa chỉ',
+		'edit-account'    => 'Thông tin cá nhân',
+		'payment-methods' => 'Phương thức thanh toán',
+		'customer-logout' => 'Đăng xuất',
+	);
+	return array_replace( $items, array_intersect_key( $labels, $items ) );
+} );
+
+add_filter( 'gettext_woocommerce', function ( $translated, $source ) {
+	if ( is_user_logged_in() || ! did_action( 'wp' ) || ! function_exists( 'is_account_page' ) || ! is_account_page() ) {
+		return $translated;
+	}
+	$labels = array(
+		'Username or email address' => 'Tên đăng nhập hoặc email',
+		'Username'                  => 'Tên đăng nhập',
+		'Email address'             => 'Địa chỉ email',
+		'Password'                  => 'Mật khẩu',
+		'Log in'                    => 'Đăng nhập',
+		'Register'                  => 'Tạo tài khoản',
+		'Remember me'               => 'Ghi nhớ đăng nhập',
+		'Lost your password?'       => 'Quên mật khẩu?',
+		'A link to set a new password will be sent to your email address.' => 'WooCommerce sẽ gửi liên kết đặt mật khẩu tới email của bạn.',
+	);
+	return $labels[ $source ] ?? $translated;
+}, 10, 2 );

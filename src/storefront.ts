@@ -8,6 +8,7 @@ export type Storefront = {
   selected?: Product;
   cartCount: number;
   heroImage: string;
+  auth?: { canRegister: boolean; register: boolean };
   archive?: {
     title: string;
     category: string;

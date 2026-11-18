@@ -183,3 +183,137 @@
   border-radius: 1rem;
   background: #f8fafc;
 }
+
+.akah-auth .woocommerce > h2,
+.akah-auth #customer_login > div > h2,
+.akah-auth[data-panel="login"] #customer_login > .col-2,
+.akah-auth[data-panel="register"] #customer_login > .col-1 {
+  display: none;
+}
+
+.akah-auth .woocommerce #customer_login > div {
+  float: none;
+  width: 100%;
+}
+
+.akah-auth .woocommerce form.login,
+.akah-auth .woocommerce form.register {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.akah-auth .woocommerce form .form-row {
+  margin: 0;
+  padding: 0;
+}
+
+.akah-auth .woocommerce form label {
+  display: block;
+  margin-bottom: .35rem;
+  font-size: .875rem;
+  font-weight: 700;
+}
+
+.akah-auth .woocommerce form .input-text {
+  width: 100%;
+  min-height: 3rem;
+  margin: 0;
+}
+
+.akah-auth .woocommerce form button.button {
+  float: none;
+  width: 100%;
+  min-height: 2.75rem;
+  margin: .5rem 0 0;
+  box-shadow: 0 10px 25px rgb(37 99 235 / .2);
+}
+
+.akah-account-content > .woocommerce {
+  display: grid;
+  align-items: start;
+  gap: 1.75rem;
+}
+
+.akah-account-content .woocommerce > :is(.woocommerce-MyAccount-navigation, .woocommerce-MyAccount-content) {
+  float: none;
+  width: auto;
+  min-width: 0;
+}
+
+.akah-account-content .woocommerce > .woocommerce-notices-wrapper {
+  grid-column: 1 / -1;
+}
+
+.akah-account-content .woocommerce > .woocommerce-notices-wrapper:empty,
+.akah-account-content > .woocommerce::before,
+.akah-account-content > .woocommerce::after {
+  display: none;
+}
+
+.akah-account-content .woocommerce-MyAccount-navigation {
+  padding: 1.25rem;
+  border-radius: 1rem;
+  background: #0f172a;
+  color: white;
+}
+
+.akah-member {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding-bottom: 1.25rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid rgb(255 255 255 / .1);
+  font-size: .875rem;
+}
+
+.akah-member div > span {
+  display: block;
+  font-size: .75rem;
+  color: #94a3b8;
+}
+
+.akah-member-initial {
+  display: grid;
+  flex: 0 0 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  border-radius: 50%;
+  background: #2563eb;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.akah-account-content .woocommerce-MyAccount-navigation ul {
+  margin: 0;
+}
+
+.akah-native.akah-account-content .woocommerce-MyAccount-navigation a {
+  background: transparent;
+  color: #cbd5e1;
+}
+
+.akah-native.akah-account-content .woocommerce-MyAccount-navigation a:hover {
+  background: rgb(255 255 255 / .08);
+}
+
+.akah-native.akah-account-content .woocommerce-MyAccount-navigation a[aria-current="page"] {
+  background: #2563eb;
+  color: white;
+}
+
+.akah-account-content .woocommerce-MyAccount-content {
+  padding: 1.25rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+}
+
+@media (min-width: 1024px) {
+  .akah-account-content > .woocommerce {
+    grid-template-columns: 250px minmax(0, 1fr);
+  }
+}
