@@ -20,9 +20,13 @@ do_action( 'woocommerce_before_account_navigation' );
 		</div>
 	</div>
 	<ul>
-		<?php foreach ( wc_get_account_menu_items() as $endpoint => $label ) : ?>
+		<?php foreach ( wc_get_account_menu_items() as $endpoint => $label ) :
+			$current = 'dashboard' === $endpoint
+				? is_account_page() && ! is_wc_endpoint_url()
+				: wc_is_current_account_menu_item( $endpoint );
+			?>
 			<li class="<?php echo esc_attr( wc_get_account_menu_item_classes( $endpoint ) ); ?>">
-				<a href="<?php echo esc_url( wc_get_account_endpoint_url( $endpoint ) ); ?>" <?php echo wc_is_current_account_menu_item( $endpoint ) ? 'aria-current="page"' : ''; ?>>
+				<a href="<?php echo esc_url( wc_get_account_endpoint_url( $endpoint ) ); ?>" <?php echo $current ? 'aria-current="page"' : ''; ?>>
 					<?php echo esc_html( $label ); ?>
 				</a>
 			</li>

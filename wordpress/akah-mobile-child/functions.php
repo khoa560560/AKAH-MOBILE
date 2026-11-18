@@ -86,7 +86,7 @@ add_filter( 'woocommerce_account_menu_items', function ( $items ) {
 } );
 
 add_filter( 'gettext_woocommerce', function ( $translated, $source ) {
-	if ( is_user_logged_in() || ! did_action( 'wp' ) || ! function_exists( 'is_account_page' ) || ! is_account_page() ) {
+	if ( ! did_action( 'wp' ) || ! function_exists( 'is_account_page' ) || ! is_account_page() ) {
 		return $translated;
 	}
 	$labels = array(
@@ -99,6 +99,28 @@ add_filter( 'gettext_woocommerce', function ( $translated, $source ) {
 		'Remember me'               => 'Ghi nhớ đăng nhập',
 		'Lost your password?'       => 'Quên mật khẩu?',
 		'A link to set a new password will be sent to your email address.' => 'WooCommerce sẽ gửi liên kết đặt mật khẩu tới email của bạn.',
+		'Order'                              => 'Đơn hàng',
+		'Date'                               => 'Ngày đặt',
+		'Status'                             => 'Trạng thái',
+		'Total'                              => 'Tổng cộng',
+		'Actions'                            => 'Thao tác',
+		'View'                               => 'Xem chi tiết',
+		'No order has been made yet.'         => 'Bạn chưa có đơn hàng nào.',
+		'Browse products'                    => 'Khám phá sản phẩm',
+		'First name'                         => 'Tên',
+		'Last name'                          => 'Họ',
+		'Display name'                       => 'Tên hiển thị',
+		'This will be how your name will be displayed in the account section and in reviews' => 'Tên này hiển thị trong tài khoản và đánh giá của bạn.',
+		'Password change'                    => 'Đổi mật khẩu',
+		'Current password (leave blank to leave unchanged)' => 'Mật khẩu hiện tại (để trống nếu giữ nguyên)',
+		'New password (leave blank to leave unchanged)' => 'Mật khẩu mới (để trống nếu giữ nguyên)',
+		'Confirm new password'               => 'Xác nhận mật khẩu mới',
+		'Save changes'                       => 'Lưu thay đổi',
+		'Billing address'                    => 'Địa chỉ thanh toán',
+		'Shipping address'                   => 'Địa chỉ giao hàng',
+		'Save address'                       => 'Lưu địa chỉ',
+		'The following addresses will be used on the checkout page by default.' => 'Các địa chỉ dưới đây sẽ được dùng mặc định khi thanh toán.',
+		'You have not set up this type of address yet.' => 'Bạn chưa thiết lập địa chỉ này.',
 	);
 	return $labels[ $source ] ?? $translated;
 }, 10, 2 );
@@ -149,3 +171,26 @@ add_filter( 'gettext_woocommerce', function ( $translated, $source ) {
 	);
 	return $labels[ $source ] ?? $translated;
 }, 10, 2 );
+
+add_filter( 'document_title_parts', function ( $parts ) {
+	if ( function_exists( 'is_account_page' ) && is_account_page() ) {
+		$parts['title'] = 'Tài khoản';
+	}
+	return $parts;
+} );
+
+add_filter( 'gettext_with_context_woocommerce', function ( $translated, $source, $context ) {
+	if ( 'Order status' !== $context || ! did_action( 'wp' ) || ! function_exists( 'is_account_page' ) || ! is_account_page() ) {
+		return $translated;
+	}
+	$labels = array(
+		'Pending payment' => 'Chờ thanh toán',
+		'Processing'      => 'Đang xử lý',
+		'On hold'         => 'Đang chờ',
+		'Completed'       => 'Đã hoàn tất',
+		'Cancelled'       => 'Đã hủy',
+		'Refunded'        => 'Đã hoàn tiền',
+		'Failed'          => 'Thất bại',
+	);
+	return $labels[ $source ] ?? $translated;
+}, 10, 3 );
