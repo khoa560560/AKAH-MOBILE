@@ -1,1959 +1,362 @@
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Apple,
-  BadgeCheck,
-  Banknote,
-  BatteryCharging,
-  Box,
-  Check,
-  ChevronDown,
-  ChevronRight,
-  CircleHelp,
-  Clock3,
-  Cable,
-  CreditCard,
-  Headphones,
-  Heart,
-  MapPin,
-  Menu,
-  Minus,
-  PackageCheck,
-  Phone,
-  Plus,
-  RefreshCw,
-  Search,
-  ShieldCheck,
-  ShoppingBag,
-  ShoppingCart,
-  SlidersHorizontal,
-  Smartphone,
-  Speaker,
-  Sparkles,
-  Star,
-  Trash2,
-  Truck,
-  User,
-  Watch,
-  X,
-  Zap,
-} from "lucide-react";
+import { FormEvent, ReactNode, useEffect, useMemo, useState } from 'react'
 
 type Product = {
-  id: number;
-  name: string;
-  brand: string;
-  category: "Điện thoại" | "Phụ kiện";
-  subcategory?: string;
-  price: number;
-  oldPrice: number;
-  image: string;
-  badge: string;
-  rating: number;
-  specs: string[];
-};
-
-type CartLine = Product & { qty: number };
-
-const phoneImages = [
-  "https://images.unsplash.com/photo-1695048133142-1a20484d2569?auto=format&fit=crop&w=900&q=88",
-  "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?auto=format&fit=crop&w=900&q=88",
-  "https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&w=900&q=88",
-  "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?auto=format&fit=crop&w=900&q=88",
-  "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=88",
-  "https://images.unsplash.com/photo-1546054454-aa26e2b734c7?auto=format&fit=crop&w=900&q=88",
-];
-
-const accessoryImages = [
-  "https://images.unsplash.com/photo-1606220945770-b5b6c2c55bf1?auto=format&fit=crop&w=900&q=88",
-  "https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?auto=format&fit=crop&w=900&q=88",
-  "https://images.unsplash.com/photo-1608156639585-b3a032ef9689?auto=format&fit=crop&w=900&q=88",
-  "https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&w=900&q=88",
-];
-
-const products: Product[] = [
-  {
-    id: 1,
-    name: "iPhone 16 Pro Max 256GB",
-    brand: "Apple",
-    category: "Điện thoại",
-    price: 30990000,
-    oldPrice: 34990000,
-    image: phoneImages[0],
-    badge: "Giảm 4 triệu",
-    rating: 4.9,
-    specs: ["6.9 inch", "Apple A18 Pro", "256GB"],
-  },
-  {
-    id: 2,
-    name: "Samsung Galaxy S25 Ultra 5G",
-    brand: "Samsung",
-    category: "Điện thoại",
-    price: 28990000,
-    oldPrice: 33990000,
-    image: phoneImages[1],
-    badge: "Bán chạy",
-    rating: 4.8,
-    specs: ["6.9 inch", "Snapdragon 8 Elite", "256GB"],
-  },
-  {
-    id: 3,
-    name: "Xiaomi 15 Ultra 5G",
-    brand: "Xiaomi",
-    category: "Điện thoại",
-    price: 25990000,
-    oldPrice: 29990000,
-    image: phoneImages[2],
-    badge: "Quà 2 triệu",
-    rating: 4.7,
-    specs: ["6.73 inch", "Snapdragon 8 Elite", "512GB"],
-  },
-  {
-    id: 4,
-    name: "OPPO Find X8 Pro 5G",
-    brand: "OPPO",
-    category: "Điện thoại",
-    price: 23990000,
-    oldPrice: 26990000,
-    image: phoneImages[3],
-    badge: "Trả góp 0%",
-    rating: 4.8,
-    specs: ["6.78 inch", "Dimensity 9400", "512GB"],
-  },
-  {
-    id: 5,
-    name: "realme 14 Pro+ 5G",
-    brand: "realme",
-    category: "Điện thoại",
-    price: 10990000,
-    oldPrice: 12990000,
-    image: phoneImages[4],
-    badge: "Mới",
-    rating: 4.6,
-    specs: ["6.83 inch", "Snapdragon 7s Gen 3", "256GB"],
-  },
-  {
-    id: 6,
-    name: "vivo V50 5G",
-    brand: "vivo",
-    category: "Điện thoại",
-    price: 12990000,
-    oldPrice: 14990000,
-    image: phoneImages[5],
-    badge: "Giá tốt",
-    rating: 4.7,
-    specs: ["6.77 inch", "Snapdragon 7 Gen 3", "256GB"],
-  },
-  {
-    id: 7,
-    name: "AirPods Pro (thế hệ 2)",
-    brand: "Apple",
-    category: "Phụ kiện",
-    subcategory: "Tai nghe",
-    price: 4990000,
-    oldPrice: 6190000,
-    image: accessoryImages[0],
-    badge: "Giảm 19%",
-    rating: 4.9,
-    specs: ["Chống ồn chủ động", "USB-C", "MagSafe"],
-  },
-  {
-    id: 8,
-    name: "Bộ sạc nhanh Samsung 45W kèm cáp",
-    brand: "Samsung",
-    category: "Phụ kiện",
-    subcategory: "Cáp sạc",
-    price: 890000,
-    oldPrice: 1190000,
-    image: accessoryImages[1],
-    badge: "Chính hãng",
-    rating: 4.8,
-    specs: ["45W", "USB-C", "Bảo hành 12 tháng"],
-  },
-  {
-    id: 9,
-    name: "Pin dự phòng Xiaomi 10000mAh",
-    brand: "Xiaomi",
-    category: "Phụ kiện",
-    subcategory: "Sạc dự phòng",
-    price: 690000,
-    oldPrice: 890000,
-    image: accessoryImages[2],
-    badge: "Tiện lợi",
-    rating: 4.6,
-    specs: ["10000mAh", "22.5W", "2 cổng ra"],
-  },
-  {
-    id: 10,
-    name: "Tai nghe Bluetooth OPPO Enco",
-    brand: "OPPO",
-    category: "Phụ kiện",
-    subcategory: "Tai nghe",
-    price: 1290000,
-    oldPrice: 1590000,
-    image: accessoryImages[3],
-    badge: "Âm thanh hay",
-    rating: 4.7,
-    specs: ["Bluetooth 5.4", "Chống ồn AI", "28 giờ"],
-  },
-  {
-    id: 11,
-    name: "Ốp lưng MagSafe trong suốt",
-    brand: "Apple",
-    category: "Phụ kiện",
-    subcategory: "Ốp lưng",
-    price: 690000,
-    oldPrice: 890000,
-    image:
-      "https://images.unsplash.com/photo-1601593346740-925612772716?auto=format&fit=crop&w=900&q=88",
-    badge: "Bảo vệ tốt",
-    rating: 4.7,
-    specs: ["MagSafe", "Chống sốc", "Trong suốt"],
-  },
-  {
-    id: 12,
-    name: "Loa Bluetooth JBL Go 4",
-    brand: "JBL",
-    category: "Phụ kiện",
-    subcategory: "Loa bluetooth",
-    price: 1190000,
-    oldPrice: 1490000,
-    image:
-      "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&w=900&q=88",
-    badge: "Âm thanh mạnh",
-    rating: 4.8,
-    specs: ["Bluetooth 5.3", "Chống nước IP67", "7 giờ"],
-  },
-  {
-    id: 13,
-    name: "Apple Watch Series 10 GPS",
-    brand: "Apple",
-    category: "Phụ kiện",
-    subcategory: "Đồng hồ thông minh",
-    price: 9990000,
-    oldPrice: 10990000,
-    image:
-      "https://images.unsplash.com/photo-1551816230-ef5deaed4a26?auto=format&fit=crop&w=900&q=88",
-    badge: "Mới",
-    rating: 4.9,
-    specs: ["46mm", "GPS", "Theo dõi sức khỏe"],
-  },
-];
-
-const brands = ["Apple", "Samsung", "Xiaomi", "OPPO", "realme", "vivo"];
-const money = (value: number) => `${value.toLocaleString("vi-VN")}₫`;
-
-const policyContent: Record<string, { title: string; intro: string; points: string[] }> = {
-  "bao-hanh": {
-    title: "Chính sách bảo hành",
-    intro: "Cam kết bảo hành minh bạch, thuận tiện cho mọi sản phẩm chính hãng.",
-    points: [
-      "Bảo hành theo tiêu chuẩn nhà sản xuất từ 12–24 tháng.",
-      "Hỗ trợ tiếp nhận tại cửa hàng hoặc gửi qua đơn vị vận chuyển.",
-      "Thời gian xử lý dự kiến 7–15 ngày làm việc.",
-    ],
-  },
-  "doi-tra": {
-    title: "Chính sách đổi trả",
-    intro: "Đổi mới linh hoạt để bạn an tâm trong từng quyết định mua sắm.",
-    points: [
-      "Đổi mới trong 30 ngày với lỗi phần cứng từ nhà sản xuất.",
-      "Sản phẩm còn nguyên trạng, đủ phụ kiện và chứng từ.",
-      "Không áp dụng với lỗi do rơi vỡ, vào nước hoặc can thiệp phần mềm.",
-    ],
-  },
-  "giao-hang": {
-    title: "Chính sách giao hàng",
-    intro: "Giao nhanh, theo dõi rõ ràng trên toàn quốc.",
-    points: [
-      "Miễn phí nội thành cho đơn từ 500.000₫.",
-      "Giao tiêu chuẩn toàn quốc từ 2–5 ngày làm việc.",
-      "Khách hàng được kiểm tra ngoại quan trước khi nhận.",
-    ],
-  },
-  "thanh-toan": {
-    title: "Chính sách thanh toán",
-    intro: "Nhiều hình thức thanh toán an toàn và thuận tiện.",
-    points: [
-      "Thanh toán khi nhận hàng (COD).",
-      "Chuyển khoản ngân hàng theo thông tin trên đơn hàng.",
-      "Hỗ trợ thẻ và trả góp tại cửa hàng (bản demo).",
-    ],
-  },
-  "bao-mat": {
-    title: "Chính sách bảo mật",
-    intro: "AKAH MOBILE tôn trọng và bảo vệ dữ liệu cá nhân của khách hàng.",
-    points: [
-      "Chỉ thu thập thông tin cần thiết để xử lý đơn hàng.",
-      "Không bán hoặc chia sẻ dữ liệu cho bên thứ ba trái phép.",
-      "Khách hàng có quyền yêu cầu cập nhật hoặc xóa dữ liệu.",
-    ],
-  },
-  "kiem-hang": {
-    title: "Chính sách kiểm hàng",
-    intro: "Kiểm tra kỹ sản phẩm trước khi nhận để đảm bảo đúng nhu cầu.",
-    points: [
-      "Đối chiếu mẫu mã, màu sắc và dung lượng.",
-      "Kiểm tra niêm phong và tình trạng ngoại quan.",
-      "Không kích hoạt hoặc dùng thử sâu trước khi thanh toán.",
-    ],
-  },
-};
-
-function Button({
-  children,
-  onClick,
-  kind = "primary",
-  type = "button",
-  className = "",
-  disabled = false,
-}: {
-  children: ReactNode;
-  onClick?: () => void;
-  kind?: "primary" | "secondary" | "dark" | "ghost";
-  type?: "button" | "submit";
-  className?: string;
-  disabled?: boolean;
-}) {
-  const styles = {
-    primary: "bg-blue-600 text-white hover:bg-blue-700 shadow-[0_10px_25px_rgba(37,99,235,.2)]",
-    secondary: "bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-100",
-    dark: "bg-slate-900 text-white hover:bg-slate-800",
-    ghost: "bg-white text-slate-700 hover:bg-slate-50 border border-slate-200",
-  };
-  return (
-    <button
-      type={type}
-      disabled={disabled}
-      onClick={onClick}
-      className={`inline-flex h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-50 ${styles[kind]} ${className}`}
-    >
-      {children}
-    </button>
-  );
+  id: number
+  name: string
+  brand: string
+  category: 'Điện thoại' | 'Phụ kiện'
+  type: string
+  price: number
+  color: string
+  accent: string
+  description: string
+  specs: string[]
 }
 
-function SectionTitle({
-  eyebrow,
-  title,
-  subtitle,
-  action,
-}: {
-  eyebrow?: string;
-  title: string;
-  subtitle?: string;
-  action?: ReactNode;
-}) {
+type CartItem = Product & { quantity: number }
+type Route = { page: string; param?: string }
+
+const products: Product[] = [
+  { id: 1, name: 'Astra Phone 15', brand: 'Apple', category: 'Điện thoại', type: 'phone', price: 18990000, color: '#dbeafe', accent: '#2563eb', description: 'Điện thoại mẫu với thiết kế tối giản, màn hình sắc nét và hiệu năng ổn định.', specs: ['Màn hình: 6.1 inch', 'Bộ nhớ: 128 GB', 'Kết nối: 5G', 'Màu mẫu: Xanh'] },
+  { id: 2, name: 'Galaxy Nova S', brand: 'Samsung', category: 'Điện thoại', type: 'phone', price: 15990000, color: '#e0e7ff', accent: '#4f46e5', description: 'Thiết bị demo cho trải nghiệm giải trí và làm việc linh hoạt hằng ngày.', specs: ['Màn hình: 6.4 inch', 'Bộ nhớ: 256 GB', 'Kết nối: 5G', 'Màu mẫu: Navy'] },
+  { id: 3, name: 'Redmi Air 13', brand: 'Xiaomi', category: 'Điện thoại', type: 'phone', price: 8990000, color: '#ffedd5', accent: '#f97316', description: 'Mẫu điện thoại cân bằng giữa hiệu năng, thiết kế và thời lượng sử dụng.', specs: ['Màn hình: 6.67 inch', 'Bộ nhớ: 128 GB', 'Kết nối: 5G', 'Màu mẫu: Cam'] },
+  { id: 4, name: 'Pixel Lite 8', brand: 'Google', category: 'Điện thoại', type: 'phone', price: 12990000, color: '#dcfce7', accent: '#16a34a', description: 'Thiết bị minh họa nhỏ gọn, giao diện tinh giản và camera linh hoạt.', specs: ['Màn hình: 6.2 inch', 'Bộ nhớ: 128 GB', 'Kết nối: 5G', 'Màu mẫu: Xanh lá'] },
+  { id: 5, name: 'Tai nghe AirBeat', brand: 'AKAH', category: 'Phụ kiện', type: 'earbuds', price: 1290000, color: '#e0f2fe', accent: '#0284c7', description: 'Tai nghe không dây minh họa, thiết kế gọn nhẹ cho nhu cầu hằng ngày.', specs: ['Kết nối: Bluetooth', 'Cổng sạc: USB-C', 'Kiểu đeo: In-ear', 'Màu mẫu: Trắng'] },
+  { id: 6, name: 'Sạc dự phòng Power 10', brand: 'AKAH', category: 'Phụ kiện', type: 'power', price: 690000, color: '#f1f5f9', accent: '#334155', description: 'Pin dự phòng demo với kiểu dáng hiện đại, thuận tiện khi di chuyển.', specs: ['Dung lượng mẫu: 10.000 mAh', 'Cổng: USB-C', 'Số cổng ra: 2', 'Màu mẫu: Đen'] },
+  { id: 7, name: 'Cáp Flex USB-C', brand: 'AKAH', category: 'Phụ kiện', type: 'cable', price: 190000, color: '#ede9fe', accent: '#7c3aed', description: 'Cáp kết nối minh họa bền gọn, phù hợp nhiều thiết bị sử dụng USB-C.', specs: ['Độ dài: 1 m', 'Đầu nối: USB-C', 'Chất liệu: Bọc dù', 'Màu mẫu: Tím'] },
+  { id: 8, name: 'Ốp lưng Clear Guard', brand: 'AKAH', category: 'Phụ kiện', type: 'case', price: 290000, color: '#fef3c7', accent: '#d97706', description: 'Ốp lưng mẫu trong suốt với viền bo mềm, ôm vừa thiết bị.', specs: ['Chất liệu: TPU', 'Kiểu: Trong suốt', 'Viền: Mềm', 'Màu mẫu: Trong'] },
+  { id: 9, name: 'Loa Mini Wave', brand: 'AKAH', category: 'Phụ kiện', type: 'speaker', price: 890000, color: '#fee2e2', accent: '#dc2626', description: 'Loa Bluetooth minh họa nhỏ gọn cho góc làm việc và chuyến đi ngắn.', specs: ['Kết nối: Bluetooth', 'Cổng sạc: USB-C', 'Kiểu: Di động', 'Màu mẫu: Đỏ'] },
+  { id: 10, name: 'Đồng hồ Active One', brand: 'AKAH', category: 'Phụ kiện', type: 'watch', price: 1990000, color: '#d1fae5', accent: '#059669', description: 'Đồng hồ thông minh demo theo dõi thông báo và hoạt động cơ bản.', specs: ['Màn hình: 1.8 inch', 'Kết nối: Bluetooth', 'Dây: Silicone', 'Màu mẫu: Xanh'] },
+]
+
+const formatPrice = (price: number) => new Intl.NumberFormat('vi-VN').format(price) + '₫'
+
+function Icon({ name, size = 20 }: { name: string; size?: number }) {
+  const paths: Record<string, ReactNode> = {
+    menu: <><path d="M4 7h16M4 12h16M4 17h16" /></>,
+    close: <><path d="m6 6 12 12M18 6 6 18" /></>,
+    search: <><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></>,
+    user: <><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></>,
+    bag: <><path d="M5 8h14l-1 13H6L5 8Z" /><path d="M9 9V6a3 3 0 0 1 6 0v3" /></>,
+    arrow: <><path d="M5 12h14m-5-5 5 5-5 5" /></>,
+    chevron: <><path d="m9 18 6-6-6-6" /></>,
+    trash: <><path d="M4 7h16M9 7V4h6v3m3 0-1 14H7L6 7m4 4v6m4-6v6" /></>,
+    minus: <><path d="M5 12h14" /></>,
+    plus: <><path d="M12 5v14M5 12h14" /></>,
+    check: <><path d="m5 12 4 4L19 6" /></>,
+    phone: <><path d="M7 3h10v18H7zM10 18h4" /></>,
+    shield: <><path d="M12 3 5 6v5c0 5 3 8 7 10 4-2 7-5 7-10V6l-7-3Z" /><path d="m9 12 2 2 4-4" /></>,
+    map: <><path d="M12 21s7-5 7-11a7 7 0 1 0-14 0c0 6 7 11 7 11Z" /><circle cx="12" cy="10" r="2" /></>,
+  }
+  return <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{paths[name]}</svg>
+}
+
+function ProductArt({ product, large = false }: { product: Product; large?: boolean }) {
+  const isPhone = product.type === 'phone'
   return (
-    <div className="mb-7 flex items-end justify-between gap-4">
-      <div>
-        {eyebrow && (
-          <p className="mb-2 text-xs font-extrabold uppercase tracking-[.18em] text-blue-600">
-            {eyebrow}
-          </p>
-        )}
-        <h2 className="text-2xl font-extrabold tracking-tight text-slate-950 md:text-3xl">
-          {title}
-        </h2>
-        {subtitle && <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">{subtitle}</p>}
-      </div>
-      {action}
+    <div className={`product-art ${large ? 'product-art-large' : ''}`} style={{ background: `linear-gradient(145deg, ${product.color}, #fff)` }}>
+      {isPhone && <div className="device-phone" style={{ borderColor: product.accent }}><div className="camera-group"><i /><i /><i /></div><span style={{ background: product.accent }} /></div>}
+      {product.type === 'earbuds' && <div className="earbuds"><i /><i /><span /></div>}
+      {product.type === 'power' && <div className="powerbank" style={{ background: product.accent }}><i /><small>10K</small></div>}
+      {product.type === 'cable' && <div className="cable" style={{ borderColor: product.accent }}><i /><i /></div>}
+      {product.type === 'case' && <div className="phone-case" style={{ borderColor: product.accent }}><i /><i /></div>}
+      {product.type === 'speaker' && <div className="speaker" style={{ background: product.accent }}><i /></div>}
+      {product.type === 'watch' && <div className="watch"><i style={{ borderColor: product.accent }}><span /></i></div>}
+      <div className="art-shadow" />
     </div>
-  );
+  )
 }
 
 function App() {
-  const [route, setRoute] = useState("home");
-  const [selected, setSelected] = useState<Product>(products[0]);
-  const [cart, setCart] = useState<CartLine[]>([
-    { ...products[1], qty: 1 },
-    { ...products[7], qty: 1 },
-  ]);
-  const [query, setQuery] = useState("");
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [toast, setToast] = useState("");
+  const [route, setRoute] = useState<Route>({ page: 'home' })
+  const [mobileMenu, setMobileMenu] = useState(false)
+  const [search, setSearch] = useState('')
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [cart, setCart] = useState<CartItem[]>([])
+  const [notice, setNotice] = useState('')
 
-  const navigate = (next: string) => {
-    setRoute(next);
-    setMobileOpen(false);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-  const viewProduct = (product: Product) => {
-    setSelected(product);
-    navigate("product");
-  };
-  const addToCart = (product: Product, go = false) => {
-    setCart((current) =>
-      current.some((p) => p.id === product.id)
-        ? current.map((p) => (p.id === product.id ? { ...p, qty: p.qty + 1 } : p))
-        : [...current, { ...product, qty: 1 }],
-    );
-    setToast(`${product.name} đã được thêm vào giỏ`);
-    window.setTimeout(() => setToast(""), 2400);
-    if (go) navigate("cart");
-  };
-  const cartCount = cart.reduce((sum, p) => sum + p.qty, 0);
+  useEffect(() => {
+    const onPop = () => setRoute(readRoute())
+    setRoute(readRoute())
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
+
+  const navigate = (page: string, param?: string) => {
+    const url = param ? `/${page}/${param}` : page === 'home' ? '/' : `/${page}`
+    history.pushState({}, '', url)
+    setRoute({ page, param })
+    setMobileMenu(false)
+    setSearchOpen(false)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const addToCart = (product: Product) => {
+    setCart(current => {
+      const exists = current.find(item => item.id === product.id)
+      return exists ? current.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item) : [...current, { ...product, quantity: 1 }]
+    })
+    setNotice(`Đã thêm ${product.name} vào giỏ`)
+    window.setTimeout(() => setNotice(''), 2300)
+  }
+
+  const searchResults = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return []
+    return products.filter(p => `${p.name} ${p.brand} ${p.category}`.toLowerCase().includes(q)).slice(0, 5)
+  }, [search])
+
+  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0)
 
   return (
-    <div className="min-h-screen bg-white text-slate-900">
-      <Header
-        route={route}
-        navigate={navigate}
-        query={query}
-        setQuery={setQuery}
-        cartCount={cartCount}
-        mobileOpen={mobileOpen}
-        setMobileOpen={setMobileOpen}
-      />
+    <div className="app-shell">
+      <Header navigate={navigate} route={route} mobileMenu={mobileMenu} setMobileMenu={setMobileMenu} search={search} setSearch={setSearch} searchOpen={searchOpen} setSearchOpen={setSearchOpen} searchResults={searchResults} cartCount={cartCount} />
       <main>
-        {route === "home" && (
-          <Home navigate={navigate} viewProduct={viewProduct} addToCart={addToCart} />
-        )}
-        {route.startsWith("phones") && (
-          <Catalog
-            key={route}
-            category="Điện thoại"
-            initialBrand={route.includes(":") ? route.split(":")[1] : undefined}
-            navigate={navigate}
-            viewProduct={viewProduct}
-            addToCart={addToCart}
-          />
-        )}
-        {route.startsWith("accessories") && (
-          <Catalog
-            key={route}
-            category="Phụ kiện"
-            initialSubcategory={route.includes(":") ? route.split(":")[1] : undefined}
-            navigate={navigate}
-            viewProduct={viewProduct}
-            addToCart={addToCart}
-          />
-        )}
-        {route === "product" && (
-          <ProductDetail
-            product={selected}
-            navigate={navigate}
-            viewProduct={viewProduct}
-            addToCart={addToCart}
-          />
-        )}
-        {route === "search" && (
-          <SearchPage
-            query={query}
-            setQuery={setQuery}
-            navigate={navigate}
-            viewProduct={viewProduct}
-            addToCart={addToCart}
-          />
-        )}
-        {route === "cart" && <CartPage cart={cart} setCart={setCart} navigate={navigate} />}
-        {route === "checkout" && <Checkout cart={cart} navigate={navigate} />}
-        {route === "success" && <OrderSuccess navigate={navigate} />}
-        {route === "login" && <Auth navigate={navigate} />}
-        {route === "account" && <Account navigate={navigate} />}
-        {route === "about" && <About navigate={navigate} />}
-        {route === "contact" && <Contact />}
-        {route.startsWith("policy-") && (
-          <Policy slug={route.replace("policy-", "")} navigate={navigate} />
-        )}
+        {route.page === 'home' && <Home navigate={navigate} addToCart={addToCart} />}
+        {route.page === 'store' && <Store navigate={navigate} addToCart={addToCart} initialQuery={route.param ? decodeURIComponent(route.param) : ''} />}
+        {route.page === 'category' && <Store navigate={navigate} addToCart={addToCart} initialCategory={route.param === 'phu-kien' ? 'Phụ kiện' : route.param === 'dien-thoai' ? 'Điện thoại' : undefined} />}
+        {route.page === 'product' && <ProductDetail product={products.find(p => String(p.id) === route.param) || products[0]} navigate={navigate} addToCart={addToCart} />}
+        {route.page === 'cart' && <Cart cart={cart} setCart={setCart} navigate={navigate} />}
+        {route.page === 'checkout' && <Checkout cart={cart} setCart={setCart} navigate={navigate} />}
+        {route.page === 'login' && <Auth mode="login" navigate={navigate} />}
+        {route.page === 'register' && <Auth mode="register" navigate={navigate} />}
+        {route.page === 'account' && <Account navigate={navigate} />}
+        {route.page === 'about' && <About />}
+        {route.page === 'contact' && <Contact />}
+        {route.page === 'policy' && <Policy />}
+        {!['home','store','category','product','cart','checkout','login','register','account','about','contact','policy'].includes(route.page) && <NotFound navigate={navigate} />}
       </main>
       <Footer navigate={navigate} />
-      {toast && (
-        <div className="fixed bottom-5 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white shadow-2xl">
-          <Check size={17} className="text-emerald-400" />
-          {toast}
-        </div>
-      )}
+      {notice && <div className="toast"><span><Icon name="check" size={16} /></span>{notice}</div>}
     </div>
-  );
+  )
 }
 
-function Header({
-  route,
-  navigate,
-  query,
-  setQuery,
-  cartCount,
-  mobileOpen,
-  setMobileOpen,
-}: {
-  route: string;
-  navigate: (r: string) => void;
-  query: string;
-  setQuery: (q: string) => void;
-  cartCount: number;
-  mobileOpen: boolean;
-  setMobileOpen: (v: boolean) => void;
-}) {
-  const submitSearch = (e: FormEvent) => {
-    e.preventDefault();
-    navigate("search");
-  };
+function readRoute(): Route {
+  const parts = window.location.pathname.split('/').filter(Boolean)
+  return { page: parts[0] || 'home', param: parts.slice(1).join('/') || undefined }
+}
+
+function Header({ navigate, route, mobileMenu, setMobileMenu, search, setSearch, searchOpen, setSearchOpen, searchResults, cartCount }: any) {
   const links = [
-    ["home", "Trang chủ"],
-    ["phones", "Điện thoại"],
-    ["accessories", "Phụ kiện"],
-    ["phones", "Thương hiệu"],
-    ["about", "Giới thiệu"],
-    ["contact", "Liên hệ"],
-  ];
-  return (
-    <>
-      <div className="bg-slate-950 px-4 py-2 text-center text-xs font-medium text-slate-200">
-        Miễn phí giao hàng toàn quốc cho đơn từ 500.000₫{" "}
-        <span className="mx-2 text-slate-600">|</span> Hotline: 1900 6868
-      </div>
-      <header className="sticky top-0 z-40 border-b border-slate-100 bg-white/95 backdrop-blur-xl">
-        <div className="mx-auto flex h-18 max-w-7xl items-center gap-4 px-4 lg:px-8">
-          <button
-            onClick={() => navigate("home")}
-            className="flex shrink-0 items-center gap-2 text-left"
-          >
-            <span className="grid size-10 place-items-center rounded-xl bg-blue-600 text-lg font-black text-white shadow-lg shadow-blue-200">
-              A
-            </span>
-            <span>
-              <strong className="block text-base leading-4 tracking-tight text-slate-950">
-                AKAH
-              </strong>
-              <small className="text-[10px] font-bold tracking-[.18em] text-blue-600">MOBILE</small>
-            </span>
-          </button>
-          <form onSubmit={submitSearch} className="relative ml-3 hidden flex-1 md:block">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Bạn cần tìm điện thoại, phụ kiện gì?"
-              className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-11 pr-4 text-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-50"
-            />
-          </form>
-          <button
-            onClick={() => navigate("login")}
-            className="ml-auto hidden items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 sm:flex"
-          >
-            <User size={21} />
-            <span className="hidden xl:block">Tài khoản</span>
-          </button>
-          <button
-            onClick={() => navigate("cart")}
-            className="relative flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-          >
-            <ShoppingBag size={22} />
-            <span className="hidden xl:block">Giỏ hàng</span>
-            {cartCount > 0 && (
-              <span className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-blue-600 text-[10px] text-white">
-                {cartCount}
-              </span>
-            )}
-          </button>
-          <button
-            onClick={() => setMobileOpen(!mobileOpen)}
-            className="rounded-lg p-2 text-slate-800 lg:hidden"
-          >
-            {mobileOpen ? <X /> : <Menu />}
-          </button>
-        </div>
-        <nav className="hidden border-t border-slate-100 lg:block">
-          <div className="mx-auto flex h-12 max-w-7xl items-center gap-8 px-8">
-            {links.map(([key, label], i) => (
-              <button
-                key={`${key}-${i}`}
-                onClick={() => navigate(key)}
-                className={`text-sm font-semibold transition hover:text-blue-600 ${route.startsWith(key) ? "text-blue-600" : "text-slate-600"}`}
-              >
-                {label}
-              </button>
-            ))}
-            <span className="ml-auto flex items-center gap-2 text-xs font-bold text-emerald-600">
-              <BadgeCheck size={16} /> Cam kết hàng chính hãng
-            </span>
-          </div>
-        </nav>
-        {mobileOpen && (
-          <div className="border-t border-slate-100 bg-white p-4 lg:hidden">
-            <form onSubmit={submitSearch} className="relative mb-3">
-              <Search
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                size={17}
-              />
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Tìm kiếm sản phẩm..."
-                className="h-11 w-full rounded-xl bg-slate-50 pl-10 pr-4 text-sm outline-none"
-              />
-            </form>
-            <div className="grid grid-cols-2 gap-2">
-              {links.map(([key, label], i) => (
-                <button
-                  key={`${key}-${i}`}
-                  onClick={() => navigate(key)}
-                  className="rounded-lg px-3 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-blue-50 hover:text-blue-600"
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </header>
-    </>
-  );
-}
-
-function Home({ navigate, viewProduct, addToCart }: PageActions) {
-  return (
-    <>
-      <section className="overflow-hidden bg-[#EFF6FF]">
-        <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-14 md:min-h-[570px] md:grid-cols-2 md:px-8 md:py-20">
-          <div className="relative z-10">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-white px-4 py-2 text-xs font-extrabold uppercase tracking-wider text-blue-700">
-              <Sparkles size={15} /> Công nghệ mới, giá tốt hơn
-            </div>
-            <h1 className="max-w-xl text-4xl font-black leading-[1.08] tracking-[-.04em] text-slate-950 md:text-6xl">
-              Chạm tương lai.
-              <br />
-              <span className="text-blue-600">Sắm công nghệ.</span>
-            </h1>
-            <p className="mt-6 max-w-lg text-base leading-7 text-slate-600 md:text-lg">
-              Khám phá smartphone chính hãng, phụ kiện thông minh và dịch vụ tận tâm dành riêng cho
-              bạn.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Button onClick={() => navigate("phones")}>
-                Khám phá ngay <ArrowRight size={17} />
-              </Button>
-              <Button kind="ghost" onClick={() => navigate("accessories")}>
-                Xem phụ kiện
-              </Button>
-            </div>
-            <div className="mt-9 flex gap-7 border-t border-blue-100 pt-6 text-sm">
-              <span>
-                <strong className="block text-xl text-slate-950">10K+</strong>
-                <small className="text-slate-500">Khách hàng</small>
-              </span>
-              <span>
-                <strong className="block text-xl text-slate-950">100%</strong>
-                <small className="text-slate-500">Chính hãng</small>
-              </span>
-              <span>
-                <strong className="block text-xl text-slate-950">4.9/5</strong>
-                <small className="text-slate-500">Đánh giá</small>
-              </span>
-            </div>
-          </div>
-          <div className="relative">
-            <div className="absolute -inset-10 rounded-full bg-blue-300/25 blur-3xl" />
-            <div className="relative overflow-hidden rounded-[2rem] border-8 border-white bg-slate-900 shadow-[0_30px_70px_rgba(15,23,42,.22)]">
-              <img
-                src="https://images.unsplash.com/photo-1707438095940-1eee18e85400?auto=format&fit=crop&w=1200&q=90"
-                alt="Bộ sưu tập smartphone cao cấp"
-                className="aspect-[4/3] w-full object-cover"
-              />
-              <div className="absolute inset-x-4 bottom-4 flex items-center justify-between rounded-2xl bg-white/90 p-4 backdrop-blur-md">
-                <div>
-                  <p className="text-xs font-bold text-blue-600">BỘ SƯU TẬP 2025</p>
-                  <p className="mt-1 font-extrabold text-slate-950">Mạnh mẽ. Tinh tế. Khác biệt.</p>
-                </div>
-                <span className="grid size-10 place-items-center rounded-full bg-blue-600 text-white">
-                  <ArrowRight size={18} />
-                </span>
-              </div>
-            </div>
-            <div className="absolute -left-5 top-8 hidden rounded-2xl bg-white p-3 shadow-xl md:flex md:items-center md:gap-3">
-              <span className="grid size-10 place-items-center rounded-xl bg-emerald-50 text-emerald-600">
-                <ShieldCheck />
-              </span>
-              <span className="text-xs">
-                <strong className="block text-sm text-slate-900">Chính hãng</strong>Bảo hành toàn
-                quốc
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
-      <section className="mx-auto max-w-7xl px-4 py-16 md:px-8">
-        <SectionTitle
-          eyebrow="Chọn theo thương hiệu"
-          title="Hãng điện thoại nổi bật"
-          subtitle="Khám phá điện thoại theo thương hiệu bạn yêu thích"
-        />
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-          {[
-            ["Apple", "Đẳng cấp và tinh tế", Apple],
-            ["Samsung", "Công nghệ dẫn đầu", Smartphone],
-            ["Xiaomi", "Hiệu năng vượt trội", Zap],
-            ["OPPO", "Camera chân dung đẹp", Sparkles],
-            ["realme", "Cấu hình mạnh, giá tốt", BatteryCharging],
-            ["vivo", "Thiết kế trẻ trung", Phone],
-          ].map(([title, text, Icon], index) => (
-            <button
-              key={title as string}
-              onClick={() => navigate(`phones:${title as string}`)}
-              className="group relative min-h-44 overflow-hidden rounded-2xl border border-slate-100 bg-white p-5 text-left shadow-[0_8px_30px_rgba(15,23,42,.05)] transition duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_16px_35px_rgba(37,99,235,.12)]"
-            >
-              <span className="grid size-11 place-items-center rounded-xl bg-blue-50 text-blue-600 transition group-hover:bg-blue-600 group-hover:text-white">
-                <Icon size={22} strokeWidth={1.8} />
-              </span>
-              <span className="absolute right-4 top-4 text-5xl font-black text-slate-50 transition group-hover:text-blue-50">
-                {index + 1}
-              </span>
-              <h3 className="mt-6 text-base font-extrabold text-slate-950">{title as string}</h3>
-              <p className="mt-1 min-h-8 text-xs leading-4 text-slate-500">{text as string}</p>
-              <span className="mt-4 flex items-center gap-1 text-xs font-bold text-blue-600">
-                Xem điện thoại
-                <ArrowRight size={14} className="transition group-hover:translate-x-1" />
-              </span>
-            </button>
-          ))}
-        </div>
-
-        <div className="mt-14 border-t border-slate-100 pt-12">
-          <SectionTitle
-            eyebrow="Phụ kiện công nghệ"
-            title="Danh mục sản phẩm khác"
-            subtitle="Phụ kiện và thiết bị công nghệ hỗ trợ trải nghiệm mua sắm của bạn"
-          />
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-            {[
-              ["Tai nghe", "Âm thanh sống động", Headphones],
-              ["Sạc dự phòng", "Năng lượng mọi lúc", BatteryCharging],
-              ["Cáp sạc", "Kết nối nhanh, bền bỉ", Cable],
-              ["Ốp lưng", "Bảo vệ đầy phong cách", ShieldCheck],
-              ["Loa bluetooth", "Âm nhạc mọi không gian", Speaker],
-              ["Đồng hồ thông minh", "Sức khỏe trên cổ tay", Watch],
-            ].map(([title, text, Icon]) => (
-              <button
-                key={title as string}
-                onClick={() => navigate(`accessories:${title as string}`)}
-                className="group flex min-h-40 flex-col rounded-2xl border border-blue-100 bg-blue-50/60 p-5 text-left transition duration-300 hover:-translate-y-1 hover:border-blue-300 hover:bg-white hover:shadow-[0_16px_35px_rgba(37,99,235,.1)]"
-              >
-                <span className="grid size-10 place-items-center rounded-xl bg-white text-blue-600 shadow-sm transition group-hover:bg-slate-950 group-hover:text-white">
-                  <Icon size={20} strokeWidth={1.8} />
-                </span>
-                <h3 className="mt-5 text-sm font-extrabold text-slate-950">{title as string}</h3>
-                <p className="mt-1 text-xs leading-4 text-slate-500">{text as string}</p>
-                <span className="mt-auto flex items-center justify-end pt-3 text-blue-600">
-                  <ArrowRight size={16} className="transition group-hover:translate-x-1" />
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
-      <section className="mx-auto max-w-7xl px-4 py-16 md:px-8">
-        <SectionTitle
-          eyebrow="Được chọn nhiều nhất"
-          title="Sản phẩm nổi bật"
-          action={
-            <button
-              onClick={() => navigate("phones")}
-              className="hidden items-center gap-1 text-sm font-bold text-blue-600 sm:flex"
-            >
-              Xem tất cả <ChevronRight size={17} />
-            </button>
-          }
-        />
-        <ProductGrid
-          products={products.slice(0, 6)}
-          viewProduct={viewProduct}
-          addToCart={addToCart}
-        />
-      </section>
-      <section className="mx-auto max-w-7xl px-4 pb-16 md:px-8">
-        <div className="relative overflow-hidden rounded-[2rem] bg-slate-950 px-7 py-10 text-white md:px-14 md:py-14">
-          <div className="absolute right-0 top-0 h-full w-1/2 bg-[radial-gradient(circle_at_center,rgba(37,99,235,.6),transparent_65%)]" />
-          <div className="relative max-w-xl">
-            <p className="text-xs font-extrabold uppercase tracking-[.2em] text-blue-400">
-              Ưu đãi thành viên mới
-            </p>
-            <h2 className="mt-3 text-3xl font-black md:text-4xl">Giảm thêm đến 1.000.000₫</h2>
-            <p className="mt-3 text-slate-400">
-              Đăng ký AKAH Member và nhận ngay voucher cho đơn hàng đầu tiên.
-            </p>
-            <Button className="mt-7" onClick={() => navigate("login")}>
-              Đăng ký ngay
-            </Button>
-          </div>
-        </div>
-      </section>
-      <Benefits />
-    </>
-  );
-}
-
-type PageActions = {
-  navigate: (r: string) => void;
-  viewProduct: (p: Product) => void;
-  addToCart: (p: Product, go?: boolean) => void;
-};
-
-function ProductGrid({
-  products: list,
-  viewProduct,
-  addToCart,
-}: {
-  products: Product[];
-  viewProduct: (p: Product) => void;
-  addToCart: (p: Product) => void;
-}) {
-  if (!list.length)
-    return (
-      <StatePanel
-        type="empty"
-        title="Chưa tìm thấy sản phẩm"
-        text="Hãy thử thay đổi từ khóa hoặc bộ lọc để xem thêm kết quả."
-      />
-    );
-  return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-      {list.map((product) => (
-        <article
-          key={product.id}
-          className="group flex min-w-0 flex-col rounded-2xl border border-slate-100 bg-white p-3 shadow-[0_8px_30px_rgba(15,23,42,.05)] transition hover:-translate-y-1 hover:border-blue-100 hover:shadow-xl"
-        >
-          <button
-            onClick={() => viewProduct(product)}
-            className="relative overflow-hidden rounded-xl bg-slate-50"
-          >
-            <img
-              src={product.image}
-              alt={product.name}
-              className="aspect-square w-full object-cover transition duration-500 group-hover:scale-105"
-            />
-            <span className="absolute left-2 top-2 rounded-lg bg-blue-600 px-2 py-1 text-[10px] font-bold text-white">
-              {product.badge}
-            </span>
-            <span className="absolute right-2 top-2 grid size-8 place-items-center rounded-full bg-white/90 text-slate-500">
-              <Heart size={15} />
-            </span>
-          </button>
-          <div className="flex flex-1 flex-col pt-4">
-            <button
-              onClick={() => viewProduct(product)}
-              className="line-clamp-2 min-h-11 text-left text-sm font-bold leading-5 text-slate-900 hover:text-blue-600"
-            >
-              {product.name}
-            </button>
-            <div className="mt-2 flex flex-wrap gap-1">
-              {product.specs.slice(0, 2).map((s) => (
-                <span
-                  key={s}
-                  className="rounded bg-slate-100 px-1.5 py-1 text-[9px] font-medium text-slate-500"
-                >
-                  {s}
-                </span>
-              ))}
-            </div>
-            <div className="mt-auto pt-4">
-              <p className="text-base font-black text-blue-600">{money(product.price)}</p>
-              <div className="mt-1 flex items-center justify-between">
-                <span className="text-[11px] text-slate-400 line-through">
-                  {money(product.oldPrice)}
-                </span>
-                <span className="flex items-center gap-1 text-[10px] font-bold text-amber-500">
-                  <Star size={11} fill="currentColor" />
-                  {product.rating}
-                </span>
-              </div>
-            </div>
-            <button
-              onClick={() => addToCart(product)}
-              className="mt-3 flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 text-xs font-bold text-white transition hover:bg-blue-600"
-            >
-              <ShoppingCart size={14} /> Thêm vào giỏ
-            </button>
-          </div>
-        </article>
-      ))}
-    </div>
-  );
-}
-
-function Catalog({
-  category,
-  initialBrand,
-  initialSubcategory,
-  navigate,
-  viewProduct,
-  addToCart,
-}: PageActions & {
-  category: Product["category"];
-  initialBrand?: string;
-  initialSubcategory?: string;
-}) {
-  const [brand, setBrand] = useState(initialBrand || "Tất cả");
-  const [subcategory, setSubcategory] = useState(initialSubcategory || "Tất cả");
-  const [price, setPrice] = useState("Tất cả");
-  const [sort, setSort] = useState("Nổi bật");
-  const [loading, setLoading] = useState(false);
-  useEffect(() => {
-    setLoading(true);
-    const id = setTimeout(() => setLoading(false), 350);
-    return () => clearTimeout(id);
-  }, [brand, subcategory, price, sort, category]);
-  const list = useMemo(() => {
-    let found = products.filter(
-      (p) =>
-        p.category === category &&
-        (brand === "Tất cả" || p.brand === brand) &&
-        (subcategory === "Tất cả" || p.subcategory === subcategory),
-    );
-    if (price === "Dưới 10 triệu") found = found.filter((p) => p.price < 10000000);
-    if (price === "10 - 20 triệu")
-      found = found.filter((p) => p.price >= 10000000 && p.price <= 20000000);
-    if (price === "Trên 20 triệu") found = found.filter((p) => p.price > 20000000);
-    if (sort === "Giá thấp") found.sort((a, b) => a.price - b.price);
-    if (sort === "Giá cao") found.sort((a, b) => b.price - a.price);
-    return found;
-  }, [brand, subcategory, price, sort, category]);
-  const pageTitle = initialBrand || initialSubcategory || category;
-  return (
-    <PageWrap>
-      <Breadcrumb
-        items={["Trang chủ", category, ...(pageTitle !== category ? [pageTitle] : [])]}
-        navigate={navigate}
-      />
-      <div className="rounded-[1.75rem] bg-gradient-to-r from-slate-950 to-blue-950 px-7 py-9 text-white md:px-10">
-        <p className="text-xs font-bold uppercase tracking-[.18em] text-blue-300">
-          Danh mục sản phẩm
-        </p>
-        <h1 className="mt-2 text-3xl font-black">{pageTitle}</h1>
-        <p className="mt-2 max-w-xl text-sm text-slate-300">
-          {category === "Điện thoại"
-            ? "Khám phá smartphone chính hãng, công nghệ mới nhất và mức giá hấp dẫn."
-            : "Nâng cấp trải nghiệm với phụ kiện chính hãng, bền đẹp và tương thích tối ưu."}
-        </p>
-      </div>
-      <div className="mt-8 grid gap-7 lg:grid-cols-[230px_1fr]">
-        <aside className="h-fit rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-          <div className="mb-5 flex items-center gap-2 font-extrabold">
-            <SlidersHorizontal size={18} /> Bộ lọc
-          </div>
-          <Filter
-            title="Thương hiệu"
-            options={["Tất cả", ...brands]}
-            value={brand}
-            setValue={setBrand}
-          />
-          {category === "Phụ kiện" && (
-            <Filter
-              title="Loại sản phẩm"
-              options={[
-                "Tất cả",
-                "Tai nghe",
-                "Sạc dự phòng",
-                "Cáp sạc",
-                "Ốp lưng",
-                "Loa bluetooth",
-                "Đồng hồ thông minh",
-              ]}
-              value={subcategory}
-              setValue={setSubcategory}
-            />
-          )}
-          <Filter
-            title="Khoảng giá"
-            options={["Tất cả", "Dưới 10 triệu", "10 - 20 triệu", "Trên 20 triệu"]}
-            value={price}
-            setValue={setPrice}
-          />
-        </aside>
-        <div>
-          <div className="mb-5 flex items-center justify-between">
-            <p className="text-sm text-slate-500">
-              Tìm thấy <strong className="text-slate-900">{list.length}</strong> sản phẩm
-            </p>
-            <label className="flex items-center gap-2 text-sm text-slate-500">
-              Sắp xếp:
-              <select
-                value={sort}
-                onChange={(e) => setSort(e.target.value)}
-                className="rounded-lg border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-800 outline-none"
-              >
-                <option>Nổi bật</option>
-                <option>Giá thấp</option>
-                <option>Giá cao</option>
-              </select>
-            </label>
-          </div>
-          {loading ? (
-            <LoadingGrid />
-          ) : (
-            <ProductGrid products={list} viewProduct={viewProduct} addToCart={addToCart} />
-          )}
-          {list.length > 0 && (
-            <div className="mt-9 flex justify-center gap-2">
-              {[1, 2, 3].map((n) => (
-                <button
-                  key={n}
-                  className={`size-10 rounded-lg text-sm font-bold ${n === 1 ? "bg-blue-600 text-white" : "border border-slate-200 text-slate-600"}`}
-                >
-                  {n}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </PageWrap>
-  );
-}
-
-function Filter({
-  title,
-  options,
-  value,
-  setValue,
-}: {
-  title: string;
-  options: string[];
-  value: string;
-  setValue: (v: string) => void;
-}) {
-  return (
-    <div className="mb-6">
-      <p className="mb-3 text-xs font-extrabold uppercase tracking-wider text-slate-400">{title}</p>
-      <div className="space-y-2">
-        {options.map((option) => (
-          <label
-            key={option}
-            className="flex cursor-pointer items-center gap-2 text-sm text-slate-600"
-          >
-            <input
-              type="radio"
-              className="accent-blue-600"
-              checked={value === option}
-              onChange={() => setValue(option)}
-            />
-            {option}
-          </label>
-        ))}
+    ['Trang chủ', 'home'], ['Điện thoại', 'category', 'dien-thoai'], ['Phụ kiện', 'category', 'phu-kien'],
+    ['Cửa hàng', 'store'], ['Giới thiệu', 'about'], ['Liên hệ', 'contact'],
+  ]
+  return <header className="site-header">
+    <div className="header-main container">
+      <button className="hamburger icon-button" onClick={() => setMobileMenu(!mobileMenu)} aria-label="Mở menu"><Icon name={mobileMenu ? 'close' : 'menu'} size={24} /></button>
+      <button className="logo" onClick={() => navigate('home')}><span className="logo-mark">A</span><span>AKAH <b>MOBILE</b></span></button>
+      <nav className={mobileMenu ? 'nav open' : 'nav'}>
+        {links.map(([label, page, param]) => <button key={label} className={route.page === page && (!param || route.param === param) ? 'active' : ''} onClick={() => navigate(page, param)}>{label}</button>)}
+      </nav>
+      <div className="header-actions">
+        <button onClick={() => navigate('account')}><Icon name="user" /><span>Tài khoản</span></button>
+        <button onClick={() => navigate('cart')} className="cart-link"><Icon name="bag" /><span>Giỏ hàng</span>{cartCount > 0 && <i>{cartCount}</i>}</button>
       </div>
     </div>
-  );
-}
-
-function LoadingGrid() {
-  return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
-      {Array.from({ length: 8 }).map((_, i) => (
-        <div key={i} className="animate-pulse rounded-2xl border border-slate-100 p-3">
-          <div className="aspect-square rounded-xl bg-slate-100" />
-          <div className="mt-4 h-4 rounded bg-slate-100" />
-          <div className="mt-2 h-4 w-2/3 rounded bg-slate-100" />
-          <div className="mt-5 h-5 w-1/2 rounded bg-slate-100" />
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function ProductDetail({
-  product,
-  navigate,
-  viewProduct,
-  addToCart,
-}: PageActions & { product: Product }) {
-  const [color, setColor] = useState("Đen Titan");
-  const [storage, setStorage] = useState("256GB");
-  const [image, setImage] = useState(product.image);
-  useEffect(() => setImage(product.image), [product]);
-  return (
-    <PageWrap>
-      <Breadcrumb items={["Trang chủ", product.category, product.name]} navigate={navigate} />
-      <div className="grid gap-10 lg:grid-cols-2">
-        <div>
-          <div className="overflow-hidden rounded-3xl bg-slate-50">
-            <img src={image} alt={product.name} className="aspect-square w-full object-cover" />
-          </div>
-          <div className="mt-3 grid grid-cols-4 gap-3">
-            {[product.image, ...phoneImages.slice(1, 4)].map((img, i) => (
-              <button
-                key={img}
-                onClick={() => setImage(img)}
-                className={`overflow-hidden rounded-xl border-2 ${image === img ? "border-blue-600" : "border-transparent"}`}
-              >
-                <img
-                  src={img}
-                  alt={`Ảnh sản phẩm ${i + 1}`}
-                  className="aspect-square w-full object-cover"
-                />
-              </button>
-            ))}
-          </div>
-        </div>
-        <div>
-          <div className="flex items-center gap-3">
-            <span className="rounded-lg bg-blue-600 px-2.5 py-1 text-xs font-bold text-white">
-              {product.badge}
-            </span>
-            <span className="flex items-center gap-1 text-sm font-bold text-amber-500">
-              <Star size={15} fill="currentColor" /> {product.rating}{" "}
-              <span className="font-normal text-slate-400">(128 đánh giá)</span>
-            </span>
-          </div>
-          <h1 className="mt-4 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
-            {product.name}
-          </h1>
-          <div className="mt-6 rounded-2xl bg-blue-50 p-5">
-            <p className="text-3xl font-black text-blue-600">{money(product.price)}</p>
-            <p className="mt-1 text-sm text-slate-400">
-              <span className="line-through">{money(product.oldPrice)}</span>{" "}
-              <span className="ml-2 font-bold text-emerald-600">
-                Tiết kiệm {money(product.oldPrice - product.price)}
-              </span>
-            </p>
-          </div>
-          <Option
-            title="Màu sắc"
-            options={["Đen Titan", "Trắng", "Xanh sa mạc"]}
-            value={color}
-            setValue={setColor}
-          />
-          <Option
-            title="Bộ nhớ"
-            options={["256GB", "512GB", "1TB"]}
-            value={storage}
-            setValue={setStorage}
-          />
-          <div className="mt-7 grid gap-3 sm:grid-cols-2">
-            <Button className="w-full" onClick={() => addToCart(product)}>
-              <ShoppingCart size={18} /> Thêm vào giỏ
-            </Button>
-            <Button className="w-full" kind="dark" onClick={() => addToCart(product, true)}>
-              Mua ngay <ArrowRight size={17} />
-            </Button>
-          </div>
-          <div className="mt-6 grid grid-cols-2 gap-3 text-xs font-semibold text-slate-600">
-            <span className="flex items-center gap-2 rounded-xl border border-slate-100 p-3">
-              <ShieldCheck className="text-blue-600" size={18} /> Bảo hành 12 tháng
-            </span>
-            <span className="flex items-center gap-2 rounded-xl border border-slate-100 p-3">
-              <Truck className="text-blue-600" size={18} /> Giao nhanh toàn quốc
-            </span>
-          </div>
-        </div>
-      </div>
-      <section className="mt-16 rounded-3xl border border-slate-100 p-6 md:p-9">
-        <SectionTitle title="Thông số nổi bật" />
-        <div className="grid gap-3 md:grid-cols-2">
-          {[
-            ["Màn hình", product.specs[0]],
-            ["Vi xử lý", product.specs[1]],
-            ["Bộ nhớ", product.specs[2]],
-            ["Pin & sạc", "4.685mAh, sạc nhanh"],
-            ["Camera sau", "48MP + 48MP + 12MP"],
-            ["Hệ điều hành", "Phiên bản mới nhất"],
-          ].map(([k, v]) => (
-            <div key={k} className="flex justify-between rounded-xl bg-slate-50 px-4 py-3 text-sm">
-              <span className="text-slate-500">{k}</span>
-              <strong>{v}</strong>
-            </div>
-          ))}
-        </div>
-      </section>
-      <section className="mt-16">
-        <SectionTitle title="Có thể bạn cũng thích" />
-        <ProductGrid
-          products={products.filter((p) => p.id !== product.id).slice(0, 5)}
-          viewProduct={viewProduct}
-          addToCart={addToCart}
-        />
-      </section>
-    </PageWrap>
-  );
-}
-
-function Option({
-  title,
-  options,
-  value,
-  setValue,
-}: {
-  title: string;
-  options: string[];
-  value: string;
-  setValue: (v: string) => void;
-}) {
-  return (
-    <div className="mt-6">
-      <p className="mb-3 text-sm font-bold">
-        {title}: <span className="font-normal text-slate-500">{value}</span>
-      </p>
-      <div className="flex flex-wrap gap-2">
-        {options.map((o) => (
-          <button
-            key={o}
-            onClick={() => setValue(o)}
-            className={`rounded-xl border px-4 py-2 text-sm font-semibold ${value === o ? "border-blue-600 bg-blue-50 text-blue-700" : "border-slate-200 text-slate-600"}`}
-          >
-            {o}
-          </button>
-        ))}
+    <div className="search-row">
+      <div className="search-wrap">
+        <Icon name="search" size={21} />
+        <input aria-label="Tìm kiếm sản phẩm" placeholder="Tìm điện thoại, phụ kiện..." value={search} onFocus={() => setSearchOpen(true)} onChange={e => { setSearch(e.target.value); setSearchOpen(true) }} onKeyDown={e => { if (e.key === 'Enter' && search.trim()) navigate('store', encodeURIComponent(search.trim())) }} />
+        {search && <button className="clear-search" aria-label="Xóa tìm kiếm" onClick={() => setSearch('')}><Icon name="close" size={17} /></button>}
+        {searchOpen && search.trim() && <div className="search-results">
+          <div className="search-result-head"><span>Kết quả gợi ý</span><button onClick={() => navigate('store', encodeURIComponent(search.trim()))}>Xem tất cả</button></div>
+          {searchResults.length ? searchResults.map((p: Product) => <button className="search-result" key={p.id} onClick={() => navigate('product', String(p.id))}><div className="result-thumb"><ProductArt product={p} /></div><span><b>{p.name}</b><small>{p.category} · {p.brand}</small></span><strong>{formatPrice(p.price)}</strong></button>) : <div className="no-search">Không tìm thấy sản phẩm phù hợp.</div>}
+        </div>}
       </div>
     </div>
-  );
+    <div className="announcement"><span>Trải nghiệm mua sắm sản phẩm công nghệ thuận tiện tại AKAH MOBILE</span></div>
+  </header>
 }
 
-function SearchPage({
-  query,
-  setQuery,
-  navigate,
-  viewProduct,
-  addToCart,
-}: PageActions & { query: string; setQuery: (v: string) => void }) {
-  const result = products.filter((p) =>
-    `${p.name} ${p.brand}`.toLowerCase().includes(query.toLowerCase()),
-  );
-  return (
-    <PageWrap>
-      <Breadcrumb items={["Trang chủ", "Tìm kiếm"]} navigate={navigate} />
-      <h1 className="text-3xl font-black">Tìm kiếm sản phẩm</h1>
-      <div className="relative mt-6 max-w-2xl">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-        <input
-          autoFocus
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="h-14 w-full rounded-2xl border border-slate-200 pl-12 pr-4 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-50"
-          placeholder="Nhập tên điện thoại hoặc thương hiệu..."
-        />
-      </div>
-      <p className="my-7 text-sm text-slate-500">
-        {query ? (
-          <>
-            Kết quả cho “<strong className="text-slate-900">{query}</strong>” — {result.length} sản
-            phẩm
-          </>
-        ) : (
-          "Nhập từ khóa để bắt đầu tìm kiếm."
-        )}
-      </p>
-      {query ? (
-        <ProductGrid products={result} viewProduct={viewProduct} addToCart={addToCart} />
-      ) : (
-        <StatePanel
-          type="empty"
-          title="Bạn đang tìm sản phẩm nào?"
-          text="Gợi ý: iPhone, Samsung, tai nghe hoặc sạc nhanh."
-        />
-      )}
-    </PageWrap>
-  );
-}
-
-function CartPage({
-  cart,
-  setCart,
-  navigate,
-}: {
-  cart: CartLine[];
-  setCart: React.Dispatch<React.SetStateAction<CartLine[]>>;
-  navigate: (r: string) => void;
-}) {
-  const total = cart.reduce((s, p) => s + p.price * p.qty, 0);
-  const update = (id: number, n: number) =>
-    setCart((c) => c.map((p) => (p.id === id ? { ...p, qty: Math.max(1, p.qty + n) } : p)));
-  if (!cart.length)
-    return (
-      <PageWrap>
-        <Breadcrumb items={["Trang chủ", "Giỏ hàng"]} navigate={navigate} />
-        <StatePanel
-          type="empty"
-          title="Giỏ hàng đang trống"
-          text="Hãy khám phá các sản phẩm công nghệ phù hợp với bạn."
-          action={<Button onClick={() => navigate("phones")}>Tiếp tục mua sắm</Button>}
-        />
-      </PageWrap>
-    );
-  return (
-    <PageWrap>
-      <Breadcrumb items={["Trang chủ", "Giỏ hàng"]} navigate={navigate} />
-      <h1 className="mb-8 text-3xl font-black">
-        Giỏ hàng{" "}
-        <span className="text-base font-medium text-slate-400">({cart.length} sản phẩm)</span>
-      </h1>
-      <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
-        <div className="space-y-4">
-          {cart.map((p) => (
-            <div
-              key={p.id}
-              className="flex gap-4 rounded-2xl border border-slate-100 p-4 shadow-sm"
-            >
-              <img
-                src={p.image}
-                alt={p.name}
-                className="size-24 rounded-xl object-cover sm:size-32"
-              />
-              <div className="flex flex-1 flex-col">
-                <div className="flex justify-between gap-2">
-                  <h3 className="font-extrabold">{p.name}</h3>
-                  <button
-                    onClick={() => setCart((c) => c.filter((x) => x.id !== p.id))}
-                    className="text-slate-400 hover:text-red-500"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </div>
-                <p className="mt-1 text-xs text-slate-500">Màu đen · Chính hãng VN/A</p>
-                <p className="mt-3 font-black text-blue-600">{money(p.price)}</p>
-                <div className="mt-auto flex items-center gap-3 pt-3">
-                  <button
-                    onClick={() => update(p.id, -1)}
-                    className="grid size-8 place-items-center rounded-lg border border-slate-200"
-                  >
-                    <Minus size={14} />
-                  </button>
-                  <strong className="text-sm">{p.qty}</strong>
-                  <button
-                    onClick={() => update(p.id, 1)}
-                    className="grid size-8 place-items-center rounded-lg border border-slate-200"
-                  >
-                    <Plus size={14} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
+function Home({ navigate, addToCart }: any) {
+  const categories = [
+    { name: 'Apple', slug: 'Apple', product: products[0] },
+    { name: 'Samsung', slug: 'Samsung', product: products[1] },
+    { name: 'Xiaomi', slug: 'Xiaomi', product: products[2] },
+    { name: 'Phụ kiện', slug: 'Phụ kiện', product: products[4] },
+  ]
+  return <>
+    <section className="hero">
+      <div className="container hero-inner">
+        <div className="hero-copy">
+          <span className="eyebrow">CÔNG NGHỆ TRONG TẦM TAY</span>
+          <h1>Chọn thiết bị phù hợp với <em>nhịp sống của bạn</em></h1>
+          <p>Khám phá điện thoại và phụ kiện công nghệ qua trải nghiệm mua sắm rõ ràng, dễ dùng.</p>
+          <button className="primary-btn" onClick={() => navigate('store')}>Khám phá sản phẩm <Icon name="arrow" /></button>
+          <div className="hero-notes"><span><Icon name="shield" size={18} /> Thông tin minh bạch</span><span><Icon name="map" size={18} /> Hỗ trợ dễ dàng</span></div>
         </div>
-        <OrderSummary total={total}>
-          <Button className="mt-5 w-full" onClick={() => navigate("checkout")}>
-            Tiến hành thanh toán <ArrowRight size={17} />
-          </Button>
-          <button
-            onClick={() => navigate("phones")}
-            className="mt-4 flex w-full items-center justify-center gap-2 text-sm font-bold text-blue-600"
-          >
-            <ArrowLeft size={16} /> Tiếp tục mua sắm
-          </button>
-        </OrderSummary>
-      </div>
-    </PageWrap>
-  );
-}
-
-function OrderSummary({ total, children }: { total: number; children?: ReactNode }) {
-  return (
-    <aside className="h-fit rounded-2xl border border-slate-100 bg-slate-50 p-6">
-      <h2 className="text-lg font-extrabold">Tóm tắt đơn hàng</h2>
-      <div className="mt-5 space-y-3 text-sm">
-        <p className="flex justify-between text-slate-500">
-          <span>Tạm tính</span>
-          <span className="font-semibold text-slate-800">{money(total)}</span>
-        </p>
-        <p className="flex justify-between text-slate-500">
-          <span>Phí vận chuyển</span>
-          <span className="font-bold text-emerald-600">Miễn phí</span>
-        </p>
-      </div>
-      <div className="mt-5 flex justify-between border-t border-slate-200 pt-5">
-        <strong>Tổng cộng</strong>
-        <strong className="text-xl text-blue-600">{money(total)}</strong>
-      </div>
-      <p className="mt-1 text-right text-[10px] text-slate-400">Đã bao gồm VAT</p>
-      {children}
-    </aside>
-  );
-}
-
-function Checkout({ cart, navigate }: { cart: CartLine[]; navigate: (r: string) => void }) {
-  const [payment, setPayment] = useState("COD");
-  const [valid, setValid] = useState(false);
-  const submit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setValid(true);
-    const form = new FormData(e.currentTarget);
-    if (form.get("name") && form.get("phone") && form.get("address")) navigate("success");
-  };
-  const total = cart.reduce((s, p) => s + p.price * p.qty, 0);
-  return (
-    <PageWrap>
-      <Breadcrumb items={["Giỏ hàng", "Thanh toán"]} navigate={navigate} />
-      <h1 className="mb-8 text-3xl font-black">Thanh toán</h1>
-      <form onSubmit={submit} className="grid gap-8 lg:grid-cols-[1fr_360px]">
-        <div className="space-y-6">
-          <section className="rounded-2xl border border-slate-100 p-6">
-            <h2 className="mb-5 flex items-center gap-2 text-lg font-extrabold">
-              <MapPin className="text-blue-600" size={20} /> Thông tin nhận hàng
-            </h2>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field name="name" label="Họ và tên" placeholder="Nguyễn Văn An" />
-              <Field name="phone" label="Số điện thoại" placeholder="0901 234 567" />
-              <div className="sm:col-span-2">
-                <Field
-                  name="address"
-                  label="Địa chỉ giao hàng"
-                  placeholder="Số nhà, tên đường, phường/xã, quận/huyện..."
-                />
-              </div>
-            </div>
-            {valid && (
-              <p className="mt-3 text-xs text-red-500">
-                Vui lòng điền đầy đủ các trường bắt buộc nếu chưa hoàn tất.
-              </p>
-            )}
-          </section>
-          <section className="rounded-2xl border border-slate-100 p-6">
-            <h2 className="mb-5 flex items-center gap-2 text-lg font-extrabold">
-              <CreditCard className="text-blue-600" size={20} /> Phương thức thanh toán
-            </h2>
-            {[
-              ["COD", "Thanh toán khi nhận hàng (COD)", Banknote],
-              ["BANK", "Chuyển khoản ngân hàng", CreditCard],
-            ].map(([key, label, Icon]) => (
-              <label
-                key={key as string}
-                className={`mb-3 flex cursor-pointer items-center gap-4 rounded-xl border p-4 ${payment === key ? "border-blue-500 bg-blue-50" : "border-slate-200"}`}
-              >
-                <input
-                  type="radio"
-                  checked={payment === key}
-                  onChange={() => setPayment(key as string)}
-                  className="accent-blue-600"
-                />
-                <Icon className="text-blue-600" size={22} />
-                <span className="text-sm font-bold">{label as string}</span>
-              </label>
-            ))}
-          </section>
-        </div>
-        <OrderSummary total={total}>
-          <Button type="submit" className="mt-5 w-full" disabled={!cart.length}>
-            Đặt hàng <ShieldCheck size={17} />
-          </Button>
-          <p className="mt-3 text-center text-[11px] leading-5 text-slate-400">
-            Bằng việc đặt hàng, bạn đồng ý với điều khoản và chính sách của AKAH MOBILE.
-          </p>
-        </OrderSummary>
-      </form>
-    </PageWrap>
-  );
-}
-
-function Field({ label, name, placeholder }: { label: string; name: string; placeholder: string }) {
-  return (
-    <label className="block text-sm font-bold text-slate-700">
-      {label}
-      <input
-        name={name}
-        placeholder={placeholder}
-        className="mt-2 h-12 w-full rounded-xl border border-slate-200 px-4 font-normal outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-50"
-      />
-    </label>
-  );
-}
-
-function OrderSuccess({ navigate }: { navigate: (r: string) => void }) {
-  return (
-    <PageWrap>
-      <div className="mx-auto max-w-2xl py-10 text-center">
-        <span className="mx-auto grid size-20 place-items-center rounded-full bg-emerald-50 text-emerald-600">
-          <PackageCheck size={40} />
-        </span>
-        <p className="mt-7 text-xs font-extrabold uppercase tracking-[.2em] text-blue-600">
-          Đặt hàng thành công
-        </p>
-        <h1 className="mt-3 text-3xl font-black md:text-4xl">Cảm ơn bạn đã tin chọn AKAH!</h1>
-        <p className="mx-auto mt-3 max-w-lg text-slate-500">
-          Đơn hàng đã được ghi nhận. Chúng tôi sẽ liên hệ xác nhận trong thời gian sớm nhất.
-        </p>
-        <div className="mt-8 rounded-2xl border border-slate-100 bg-slate-50 p-6 text-left">
-          <div className="flex justify-between border-b border-slate-200 pb-4">
-            <span className="text-sm text-slate-500">Mã đơn hàng</span>
-            <strong className="text-blue-600">#AKH25062168</strong>
-          </div>
-          <div className="mt-4 grid grid-cols-2 gap-5 text-sm">
-            <span className="text-slate-500">
-              Trạng thái<strong className="mt-1 block text-amber-600">Chờ xác nhận</strong>
-            </span>
-            <span className="text-slate-500">
-              Tổng thanh toán<strong className="mt-1 block text-slate-950">34.870.000₫</strong>
-            </span>
-          </div>
-        </div>
-        <div className="mt-7 flex flex-wrap justify-center gap-3">
-          <Button onClick={() => navigate("account")}>Theo dõi đơn hàng</Button>
-          <Button kind="ghost" onClick={() => navigate("home")}>
-            Về trang chủ
-          </Button>
+        <div className="hero-visual" aria-label="Minh họa điện thoại công nghệ">
+          <div className="orb orb-one" /><div className="orb orb-two" />
+          <div className="hero-phone back"><span /></div>
+          <div className="hero-phone front"><div className="hero-screen"><i>AKAH</i><b>mobile</b></div></div>
+          <div className="floating-chip chip-one">5G</div><div className="floating-chip chip-two"><Icon name="phone" size={20} /></div>
         </div>
       </div>
-    </PageWrap>
-  );
+    </section>
+    <section className="section container">
+      <SectionTitle eyebrow="KHÁM PHÁ NHANH" title="Danh mục nổi bật" action="Xem tất cả" onClick={() => navigate('store')} />
+      <div className="category-grid">
+        {categories.map(cat => <button className="category-card" key={cat.name} onClick={() => cat.name === 'Phụ kiện' ? navigate('category', 'phu-kien') : navigate('store', encodeURIComponent(cat.slug))}>
+          <ProductArt product={cat.product} />
+          <span>{cat.name}<Icon name="chevron" size={18} /></span>
+        </button>)}
+      </div>
+    </section>
+    <section className="section section-soft">
+      <div className="container">
+        <SectionTitle eyebrow="GỢI Ý CHO BẠN" title="Sản phẩm nổi bật" subtitle="Dữ liệu minh họa để bạn hình dung trải nghiệm cửa hàng." action="Xem cửa hàng" onClick={() => navigate('store')} />
+        <div className="product-grid">{products.slice(0, 8).map(p => <ProductCard key={p.id} product={p} navigate={navigate} addToCart={addToCart} />)}</div>
+      </div>
+    </section>
+    <section className="benefits container">
+      <div><span><Icon name="phone" /></span><b>Sản phẩm rõ ràng</b><p>Thông tin được trình bày dễ xem.</p></div>
+      <div><span><Icon name="shield" /></span><b>Mua sắm an tâm</b><p>Quy trình đặt hàng minh bạch.</p></div>
+      <div><span><Icon name="map" /></span><b>Hỗ trợ thuận tiện</b><p>Thông tin liên hệ tập trung.</p></div>
+    </section>
+  </>
 }
 
-function Auth({ navigate }: { navigate: (r: string) => void }) {
-  const [register, setRegister] = useState(false);
-  return (
-    <div className="grid min-h-[700px] lg:grid-cols-2">
-      <div className="relative hidden overflow-hidden bg-slate-950 lg:block">
-        <img
-          src="https://images.unsplash.com/photo-1663245482988-22fad02654e3?auto=format&fit=crop&w=1200&q=88"
-          alt="Công nghệ di động"
-          className="h-full w-full object-cover opacity-60"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-blue-900/30" />
-        <div className="absolute bottom-12 left-12 max-w-md text-white">
-          <p className="text-xs font-bold uppercase tracking-[.2em] text-blue-300">AKAH MEMBER</p>
-          <h2 className="mt-3 text-4xl font-black">Nhiều đặc quyền hơn mỗi ngày.</h2>
-          <p className="mt-3 text-slate-300">
-            Quản lý đơn hàng, tích điểm và nhận ưu đãi riêng dành cho thành viên.
-          </p>
-        </div>
-      </div>
-      <div className="flex items-center justify-center px-4 py-16">
-        <div className="w-full max-w-md">
-          <button
-            onClick={() => navigate("home")}
-            className="mb-8 flex items-center gap-2 text-sm font-bold text-slate-500"
-          >
-            <ArrowLeft size={17} /> Về trang chủ
-          </button>
-          <p className="text-xs font-extrabold uppercase tracking-widest text-blue-600">
-            {register ? "Tạo tài khoản mới" : "Chào mừng trở lại"}
-          </p>
-          <h1 className="mt-2 text-3xl font-black">
-            {register ? "Đăng ký AKAH Member" : "Đăng nhập tài khoản"}
-          </h1>
-          <div className="mt-8 space-y-4">
-            {register && <Field label="Họ và tên" name="name" placeholder="Nguyễn Văn An" />}
-            <Field label="Số điện thoại hoặc email" name="login" placeholder="email@example.com" />
-            <Field label="Mật khẩu" name="password" placeholder="••••••••" />
-          </div>
-          <Button className="mt-6 w-full" onClick={() => navigate("account")}>
-            {register ? "Tạo tài khoản" : "Đăng nhập"} <ArrowRight size={17} />
-          </Button>
-          <p className="mt-6 text-center text-sm text-slate-500">
-            {register ? "Đã có tài khoản?" : "Chưa có tài khoản?"}{" "}
-            <button onClick={() => setRegister(!register)} className="font-bold text-blue-600">
-              {register ? "Đăng nhập" : "Đăng ký ngay"}
-            </button>
-          </p>
-        </div>
+function SectionTitle({ eyebrow, title, subtitle, action, onClick }: any) {
+  return <div className="section-title"><div><span>{eyebrow}</span><h2>{title}</h2>{subtitle && <p>{subtitle}</p>}</div>{action && <button onClick={onClick}>{action}<Icon name="arrow" size={18} /></button>}</div>
+}
+
+function ProductCard({ product, navigate, addToCart }: { product: Product; navigate: any; addToCart: any }) {
+  return <article className="product-card">
+    <button className="product-image" onClick={() => navigate('product', String(product.id))}><ProductArt product={product} /></button>
+    <div className="product-info">
+      <span className="product-type">{product.category} · {product.brand}</span>
+      <button className="product-name" onClick={() => navigate('product', String(product.id))}>{product.name}</button>
+      <strong>{formatPrice(product.price)}</strong>
+      <div className="product-actions"><button className="outline-btn" onClick={() => navigate('product', String(product.id))}>Xem</button><button className="add-btn" onClick={() => addToCart(product)}><Icon name="bag" size={18} /> Thêm giỏ</button></div>
+    </div>
+  </article>
+}
+
+function Store({ navigate, addToCart, initialQuery = '', initialCategory }: any) {
+  const [query, setQuery] = useState(initialQuery)
+  const [brand, setBrand] = useState('Tất cả')
+  const [category, setCategory] = useState(initialCategory || 'Tất cả')
+  const [price, setPrice] = useState('Tất cả')
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  useEffect(() => { setQuery(initialQuery); if (initialCategory) setCategory(initialCategory) }, [initialQuery, initialCategory])
+  const filtered = products.filter(p => {
+    const matchesQuery = `${p.name} ${p.brand} ${p.category}`.toLowerCase().includes(query.toLowerCase())
+    const matchesBrand = brand === 'Tất cả' || p.brand === brand
+    const matchesCategory = category === 'Tất cả' || p.category === category
+    const matchesPrice = price === 'Tất cả' || (price === 'Dưới 1 triệu' && p.price < 1000000) || (price === '1–10 triệu' && p.price >= 1000000 && p.price <= 10000000) || (price === 'Trên 10 triệu' && p.price > 10000000)
+    return matchesQuery && matchesBrand && matchesCategory && matchesPrice
+  })
+  const reset = () => { setQuery(''); setBrand('Tất cả'); setCategory('Tất cả'); setPrice('Tất cả') }
+  return <div className="page container">
+    <PageHeader label="CỬA HÀNG" title={initialCategory || 'Tất cả sản phẩm'} text="Khám phá danh sách sản phẩm mẫu và lọc theo nhu cầu của bạn." />
+    <div className="mobile-filter-row"><button className="outline-btn" onClick={() => setFiltersOpen(!filtersOpen)}>Bộ lọc {filtersOpen ? '−' : '+'}</button><span>{filtered.length} sản phẩm</span></div>
+    <div className="store-layout">
+      <aside className={filtersOpen ? 'filters open' : 'filters'}>
+        <div className="filter-title"><b>Bộ lọc</b><button onClick={reset}>Đặt lại</button></div>
+        <label>Tìm trong cửa hàng<div className="filter-search"><Icon name="search" size={17} /><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Nhập tên sản phẩm" /></div></label>
+        <FilterGroup title="Danh mục" options={['Tất cả', 'Điện thoại', 'Phụ kiện']} value={category} setValue={setCategory} />
+        <FilterGroup title="Thương hiệu" options={['Tất cả', 'Apple', 'Samsung', 'Xiaomi', 'Google', 'AKAH']} value={brand} setValue={setBrand} />
+        <FilterGroup title="Khoảng giá" options={['Tất cả', 'Dưới 1 triệu', '1–10 triệu', 'Trên 10 triệu']} value={price} setValue={setPrice} />
+      </aside>
+      <div className="store-products">
+        <div className="result-line"><span>Hiển thị <b>{filtered.length}</b> sản phẩm</span><span>Sắp xếp: Mặc định</span></div>
+        {filtered.length ? <div className="product-grid store-grid">{filtered.map(p => <ProductCard key={p.id} product={p} navigate={navigate} addToCart={addToCart} />)}</div> : <EmptyState title="Không có kết quả" text="Thử thay đổi từ khóa hoặc bỏ bớt bộ lọc để xem thêm sản phẩm." action="Xóa bộ lọc" onClick={reset} />}
       </div>
     </div>
-  );
+  </div>
 }
 
-function Account({ navigate }: { navigate: (r: string) => void }) {
-  const [tab, setTab] = useState("orders");
-  return (
-    <PageWrap>
-      <Breadcrumb items={["Trang chủ", "Tài khoản"]} navigate={navigate} />
-      <div className="grid gap-7 lg:grid-cols-[250px_1fr]">
-        <aside className="h-fit rounded-2xl bg-slate-950 p-5 text-white">
-          <div className="flex items-center gap-3 border-b border-white/10 pb-5">
-            <span className="grid size-11 place-items-center rounded-full bg-blue-600 font-black">
-              NA
-            </span>
-            <div>
-              <strong className="text-sm">Nguyễn Văn An</strong>
-              <p className="text-xs text-slate-400">AKAH Member</p>
-            </div>
-          </div>
-          <div className="mt-4 space-y-1">
-            {[
-              ["orders", "Đơn hàng của tôi", Box],
-              ["profile", "Thông tin cá nhân", User],
-              ["address", "Sổ địa chỉ", MapPin],
-            ].map(([key, label, Icon]) => (
-              <button
-                key={key as string}
-                onClick={() => setTab(key as string)}
-                className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold ${tab === key ? "bg-blue-600" : "text-slate-300 hover:bg-white/5"}`}
-              >
-                <Icon size={18} />
-                {label as string}
-              </button>
-            ))}
-          </div>
-        </aside>
-        <section>
-          <h1 className="text-3xl font-black">
-            {tab === "orders"
-              ? "Đơn hàng của tôi"
-              : tab === "profile"
-                ? "Thông tin cá nhân"
-                : "Sổ địa chỉ"}
-          </h1>
-          {tab === "orders" && (
-            <div className="mt-6 rounded-2xl border border-slate-100 p-5">
-              <div className="flex flex-wrap justify-between gap-3 border-b border-slate-100 pb-4">
-                <span>
-                  <strong>#AKH25062168</strong>
-                  <small className="ml-3 text-slate-400">18/06/2025</small>
-                </span>
-                <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-600">
-                  Đang xử lý
-                </span>
-              </div>
-              <div className="flex items-center gap-4 py-5">
-                <img src={products[0].image} className="size-16 rounded-lg object-cover" alt="" />
-                <div>
-                  <strong className="text-sm">{products[0].name}</strong>
-                  <p className="mt-1 text-xs text-slate-400">Số lượng: 1</p>
-                </div>
-                <strong className="ml-auto text-blue-600">{money(products[0].price)}</strong>
-              </div>
-              <div className="flex justify-end border-t border-slate-100 pt-4">
-                <Button kind="ghost">Xem chi tiết</Button>
-              </div>
-            </div>
-          )}
-          {tab === "profile" && (
-            <div className="mt-6 grid gap-4 rounded-2xl border border-slate-100 p-6 sm:grid-cols-2">
-              <Field label="Họ và tên" name="name" placeholder="Nguyễn Văn An" />
-              <Field label="Số điện thoại" name="phone" placeholder="0901 234 567" />
-              <Field label="Email" name="email" placeholder="an.nguyen@example.com" />
-              <div className="self-end">
-                <Button>Lưu thay đổi</Button>
-              </div>
-            </div>
-          )}
-          {tab === "address" && (
-            <div className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 p-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <strong>Nguyễn Văn An</strong>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
-                    0901 234 567
-                    <br />
-                    120 Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP.HCM
-                  </p>
-                </div>
-                <span className="rounded bg-blue-600 px-2 py-1 text-[10px] font-bold text-white">
-                  MẶC ĐỊNH
-                </span>
-              </div>
-            </div>
-          )}
-        </section>
+function FilterGroup({ title, options, value, setValue }: any) {
+  return <fieldset><legend>{title}</legend>{options.map((option: string) => <label className="radio" key={option}><input type="radio" name={title} checked={value === option} onChange={() => setValue(option)} /><span />{option}</label>)}</fieldset>
+}
+
+function ProductDetail({ product, navigate, addToCart }: { product: Product; navigate: any; addToCart: any }) {
+  const [qty, setQty] = useState(1)
+  return <div className="page container">
+    <div className="breadcrumb"><button onClick={() => navigate('home')}>Trang chủ</button><i>/</i><button onClick={() => navigate('store')}>Cửa hàng</button><i>/</i><span>{product.name}</span></div>
+    <div className="product-detail">
+      <div className="detail-gallery"><ProductArt product={product} large /><span>Hình ảnh minh họa</span></div>
+      <div className="detail-info">
+        <span className="eyebrow">{product.category} · {product.brand}</span><h1>{product.name}</h1><p className="detail-description">{product.description}</p><strong className="detail-price">{formatPrice(product.price)}</strong>
+        <div className="detail-divider" />
+        <div className="quantity-label">Số lượng</div><div className="detail-buy"><Quantity value={qty} onChange={setQty} /><button className="primary-btn" onClick={() => { for (let i = 0; i < qty; i++) addToCart(product) }}><Icon name="bag" /> Thêm vào giỏ</button></div>
+        <p className="demo-note">Đây là sản phẩm và mức giá minh họa, không phát sinh giao dịch thật.</p>
       </div>
-    </PageWrap>
-  );
+    </div>
+    <section className="spec-section"><h2>Thông số sản phẩm</h2><div>{product.specs.map((spec, i) => { const [label, value] = spec.split(': '); return <p key={spec}><span>{label}</span><b>{value}</b></p> })}</div></section>
+    <section className="section related"><SectionTitle eyebrow="CÓ THỂ BẠN QUAN TÂM" title="Sản phẩm liên quan" /><div className="product-grid">{products.filter(p => p.id !== product.id && p.category === product.category).slice(0, 4).map(p => <ProductCard key={p.id} product={p} navigate={navigate} addToCart={addToCart} />)}</div></section>
+  </div>
 }
 
-function About({ navigate }: { navigate: (r: string) => void }) {
-  return (
-    <>
-      <section className="bg-slate-950 px-4 py-20 text-center text-white">
-        <p className="text-xs font-extrabold uppercase tracking-[.2em] text-blue-400">
-          Về AKAH MOBILE
-        </p>
-        <h1 className="mx-auto mt-4 max-w-3xl text-4xl font-black leading-tight md:text-6xl">
-          Công nghệ tốt hơn.
-          <br />
-          Trải nghiệm gần hơn.
-        </h1>
-        <p className="mx-auto mt-5 max-w-2xl text-slate-400">
-          Chúng tôi xây dựng một nơi mua sắm công nghệ minh bạch, hiện đại và tận tâm cho người
-          Việt.
-        </p>
-      </section>
-      <PageWrap>
-        <div className="grid gap-12 py-8 md:grid-cols-2">
-          <div>
-            <SectionTitle
-              eyebrow="Câu chuyện của chúng tôi"
-              title="Không chỉ bán thiết bị, chúng tôi trao trải nghiệm."
-            />
-            <p className="leading-7 text-slate-600">
-              AKAH MOBILE bắt đầu từ một niềm tin đơn giản: mọi người đều xứng đáng tiếp cận công
-              nghệ chính hãng với mức giá hợp lý và dịch vụ tử tế. Từ tư vấn, mua hàng đến hậu mãi,
-              mỗi điểm chạm đều được thiết kế để bạn an tâm.
-            </p>
-            <Button className="mt-7" onClick={() => navigate("contact")}>
-              Liên hệ với chúng tôi
-            </Button>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            {[
-              ["10K+", "Khách hàng tin chọn"],
-              ["6+", "Thương hiệu lớn"],
-              ["24/7", "Hỗ trợ trực tuyến"],
-              ["4.9/5", "Điểm hài lòng"],
-            ].map(([n, t]) => (
-              <div key={n} className="rounded-2xl bg-blue-50 p-6">
-                <strong className="text-3xl font-black text-blue-600">{n}</strong>
-                <p className="mt-2 text-sm text-slate-500">{t}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </PageWrap>
-      <Benefits />
-    </>
-  );
+function Quantity({ value, onChange }: any) {
+  return <div className="quantity"><button onClick={() => onChange(Math.max(1, value - 1))}><Icon name="minus" size={15} /></button><span>{value}</span><button onClick={() => onChange(value + 1)}><Icon name="plus" size={15} /></button></div>
+}
+
+function Cart({ cart, setCart, navigate }: { cart: CartItem[]; setCart: any; navigate: any }) {
+  const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  const update = (id: number, quantity: number) => setCart((items: CartItem[]) => items.map(i => i.id === id ? { ...i, quantity } : i))
+  if (!cart.length) return <div className="page container"><PageHeader label="GIỎ HÀNG" title="Giỏ hàng của bạn" /><EmptyState icon="bag" title="Giỏ hàng đang trống" text="Bạn chưa thêm sản phẩm nào. Hãy khám phá cửa hàng để bắt đầu." action="Khám phá sản phẩm" onClick={() => navigate('store')} /></div>
+  return <div className="page container"><PageHeader label="GIỎ HÀNG" title="Giỏ hàng của bạn" text={`${cart.length} sản phẩm trong giỏ`} />
+    <div className="cart-layout"><div className="cart-list">{cart.map(item => <article className="cart-item" key={item.id}><div className="cart-thumb"><ProductArt product={item} /></div><div className="cart-item-info"><span>{item.category} · {item.brand}</span><button onClick={() => navigate('product', String(item.id))}>{item.name}</button><strong>{formatPrice(item.price)}</strong></div><Quantity value={item.quantity} onChange={(q: number) => update(item.id, q)} /><b className="line-price">{formatPrice(item.price * item.quantity)}</b><button className="remove" onClick={() => setCart((items: CartItem[]) => items.filter(i => i.id !== item.id))} aria-label="Xóa sản phẩm"><Icon name="trash" /></button></article>)}</div>
+    <aside className="order-summary"><h2>Tóm tắt đơn hàng</h2><p><span>Tạm tính</span><b>{formatPrice(subtotal)}</b></p><p><span>Phí vận chuyển</span><span>Tính ở bước sau</span></p><div /><p className="total"><span>Tổng cộng</span><b>{formatPrice(subtotal)}</b></p><button className="primary-btn full" onClick={() => navigate('checkout')}>Tiến hành thanh toán <Icon name="arrow" /></button><button className="continue" onClick={() => navigate('store')}>Tiếp tục mua sắm</button></aside></div>
+  </div>
+}
+
+function Checkout({ cart, setCart, navigate }: { cart: CartItem[]; setCart: any; navigate: any }) {
+  const [method, setMethod] = useState('cod')
+  const [done, setDone] = useState(false)
+  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  const submit = (e: FormEvent) => { e.preventDefault(); setDone(true); setCart([]); window.scrollTo(0, 0) }
+  if (done) return <div className="page container narrow"><div className="success-state"><span><Icon name="check" size={34} /></span><small>ĐẶT HÀNG DEMO THÀNH CÔNG</small><h1>Cảm ơn bạn đã trải nghiệm</h1><p>Đơn hàng mẫu đã được ghi nhận trên giao diện. Không có thanh toán hoặc giao dịch thật nào được thực hiện.</p><button className="primary-btn" onClick={() => navigate('home')}>Về trang chủ <Icon name="arrow" /></button></div></div>
+  if (!cart.length) return <div className="page container"><EmptyState title="Chưa có sản phẩm để thanh toán" text="Vui lòng thêm sản phẩm vào giỏ trước khi tiếp tục." action="Đến cửa hàng" onClick={() => navigate('store')} /></div>
+  return <div className="page container"><PageHeader label="THANH TOÁN DEMO" title="Hoàn tất đơn hàng" text="Thông tin dưới đây chỉ phục vụ trải nghiệm prototype." />
+    <form className="checkout-layout" onSubmit={submit}><div className="checkout-form"><section><h2>Thông tin nhận hàng</h2><div className="form-grid"><label>Họ và tên<input required placeholder="Nguyễn Văn A" /></label><label>Số điện thoại<input required type="tel" placeholder="Nhập số điện thoại" /></label><label className="wide">Email<input required type="email" placeholder="email@example.com" /></label><label className="wide">Địa chỉ nhận hàng<input required placeholder="Số nhà, tên đường, phường/xã..." /></label><label className="wide">Ghi chú<textarea placeholder="Ghi chú cho đơn hàng (không bắt buộc)" /></label></div></section>
+      <section><h2>Phương thức thanh toán</h2><label className={`payment ${method === 'cod' ? 'selected' : ''}`}><input type="radio" checked={method === 'cod'} onChange={() => setMethod('cod')} /><span><b>Thanh toán khi nhận hàng (COD)</b><small>Thanh toán demo khi nhận sản phẩm.</small></span></label><label className={`payment ${method === 'bank' ? 'selected' : ''}`}><input type="radio" checked={method === 'bank'} onChange={() => setMethod('bank')} /><span><b>Chuyển khoản ngân hàng</b><small>Thông tin chuyển khoản chỉ hiển thị minh họa.</small></span></label>{method === 'bank' && <div className="bank-demo"><b>THÔNG TIN DEMO</b><p>Ngân hàng: Đang cập nhật</p><p>Số tài khoản: Đang cập nhật</p><p>Nội dung: AKAH + Số điện thoại</p></div>}</section></div>
+      <aside className="order-summary checkout-summary"><h2>Đơn hàng ({cart.length})</h2>{cart.map(item => <div className="checkout-item" key={item.id}><div><ProductArt product={item} /><i>{item.quantity}</i></div><span>{item.name}</span><b>{formatPrice(item.price * item.quantity)}</b></div>)}<div /><p><span>Tạm tính</span><b>{formatPrice(total)}</b></p><p><span>Phí vận chuyển</span><span>Đang cập nhật</span></p><div /><p className="total"><span>Tổng cộng</span><b>{formatPrice(total)}</b></p><button className="primary-btn full" type="submit">Đặt hàng demo <Icon name="check" /></button><small className="checkout-disclaimer">Bằng cách tiếp tục, bạn xác nhận đây chỉ là prototype và không phát sinh giao dịch thật.</small></aside></form>
+  </div>
+}
+
+function Auth({ mode, navigate }: any) {
+  const isLogin = mode === 'login'
+  const [submitted, setSubmitted] = useState(false)
+  return <div className="auth-page"><div className="auth-side"><span className="logo-mark">A</span><h2>Công nghệ phù hợp,<br />trải nghiệm dễ dàng.</h2><p>Không gian mua sắm hiện đại dành cho điện thoại và phụ kiện.</p></div><div className="auth-card">
+    <button className="back-home" onClick={() => navigate('home')}>← Về trang chủ</button>
+    {submitted ? <div className="auth-success"><span><Icon name="check" /></span><h1>{isLogin ? 'Đăng nhập demo thành công' : 'Đăng ký demo thành công'}</h1><p>Đây là trạng thái minh họa, không có tài khoản thật được tạo.</p><button className="primary-btn" onClick={() => navigate('account')}>Đến tài khoản</button></div> : <><small>TÀI KHOẢN AKAH</small><h1>{isLogin ? 'Chào mừng trở lại' : 'Tạo tài khoản mới'}</h1><p>{isLogin ? 'Đăng nhập để xem thông tin tài khoản demo.' : 'Điền thông tin để trải nghiệm luồng đăng ký.'}</p><form onSubmit={e => { e.preventDefault(); setSubmitted(true) }}>{!isLogin && <label>Họ và tên<input required placeholder="Nhập họ và tên" /></label>}<label>Email<input required type="email" placeholder="email@example.com" /></label><label>Mật khẩu<input required type="password" placeholder="Ít nhất 6 ký tự" minLength={6} /></label><button className="primary-btn full">{isLogin ? 'Đăng nhập' : 'Đăng ký'} <Icon name="arrow" /></button></form><div className="auth-switch">{isLogin ? 'Chưa có tài khoản?' : 'Đã có tài khoản?'} <button onClick={() => navigate(isLogin ? 'register' : 'login')}>{isLogin ? 'Đăng ký ngay' : 'Đăng nhập'}</button></div></>}
+  </div></div>
+}
+
+function Account({ navigate }: any) {
+  return <div className="page container"><PageHeader label="TÀI KHOẢN" title="Xin chào, Khách hàng" text="Khu vực tài khoản mẫu để minh họa trải nghiệm sau đăng nhập." /><div className="account-grid"><aside><div className="avatar">AK</div><b>Tài khoản demo</b><span>demo@akahmobile.vn</span><nav><button className="active">Tổng quan</button><button>Đơn hàng</button><button>Địa chỉ</button><button onClick={() => navigate('login')}>Đăng xuất</button></nav></aside><div className="account-content"><h2>Tổng quan tài khoản</h2><div className="account-cards"><article><span>Đơn hàng</span><b>0</b><small>Chưa có đơn hàng</small></article><article><span>Địa chỉ</span><b>0</b><small>Chưa lưu địa chỉ</small></article></div><div className="account-note"><Icon name="shield" /><div><b>Trạng thái tài khoản demo</b><p>Dữ liệu tại đây chỉ để minh họa giao diện và không được lưu trữ.</p></div></div></div></div></div>
+}
+
+function About() {
+  return <><div className="about-hero"><div className="container"><span>VỀ AKAH MOBILE</span><h1>Công nghệ gần gũi hơn<br />với mọi người</h1><p>AKAH MOBILE hướng đến một trải nghiệm mua sắm điện thoại và phụ kiện rõ ràng, hiện đại và dễ tiếp cận.</p></div></div><div className="page container"><section className="story"><div><span>CÂU CHUYỆN CỦA CHÚNG TÔI</span><h2>Một cửa hàng công nghệ được xây dựng từ sự đơn giản</h2></div><div><p>Chúng tôi tin rằng việc tìm một thiết bị phù hợp không nên phức tạp. Vì vậy, AKAH MOBILE tập trung vào cách trình bày thông tin trực quan và hành trình mua sắm thuận tiện.</p><p>Website hiện là prototype với dữ liệu minh họa. Thông tin chính thức về doanh nghiệp và cửa hàng sẽ được cập nhật sau.</p></div></section><section className="values"><article><span>01</span><h3>Rõ ràng</h3><p>Thông tin sản phẩm có cấu trúc, dễ đọc và dễ so sánh.</p></article><article><span>02</span><h3>Thuận tiện</h3><p>Thiết kế linh hoạt trên điện thoại, máy tính bảng và desktop.</p></article><article><span>03</span><h3>Tận tâm</h3><p>Đặt nhu cầu thực tế của khách hàng vào trung tâm trải nghiệm.</p></article></section></div></>
 }
 
 function Contact() {
-  const [sent, setSent] = useState(false);
-  return (
-    <PageWrap>
-      <div className="grid gap-10 lg:grid-cols-2">
-        <div>
-          <p className="text-xs font-extrabold uppercase tracking-[.2em] text-blue-600">
-            Kết nối cùng AKAH
-          </p>
-          <h1 className="mt-3 text-4xl font-black">Chúng tôi luôn sẵn sàng hỗ trợ.</h1>
-          <p className="mt-4 max-w-lg leading-7 text-slate-500">
-            Bạn cần tư vấn sản phẩm, kiểm tra đơn hàng hay hỗ trợ bảo hành? Hãy để lại thông tin.
-          </p>
-          <div className="mt-8 space-y-4">
-            {[
-              [Phone, "Hotline", "1900 6868"],
-              [MapPin, "Cửa hàng", "120 Nguyễn Huệ, Quận 1, TP.HCM"],
-              [Clock3, "Giờ làm việc", "08:00 – 21:30, Thứ 2 – Chủ nhật"],
-            ].map(([Icon, k, v]) => (
-              <div
-                key={k as string}
-                className="flex items-center gap-4 rounded-2xl bg-slate-50 p-4"
-              >
-                <span className="grid size-11 place-items-center rounded-xl bg-blue-600 text-white">
-                  <Icon size={20} />
-                </span>
-                <span>
-                  <small className="text-slate-400">{k as string}</small>
-                  <strong className="block text-sm">{v as string}</strong>
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="rounded-3xl border border-slate-100 p-6 shadow-xl shadow-slate-100">
-          <h2 className="text-xl font-extrabold">Gửi yêu cầu hỗ trợ</h2>
-          {sent ? (
-            <StatePanel
-              type="success"
-              title="Đã gửi yêu cầu"
-              text="AKAH MOBILE sẽ phản hồi bạn trong vòng 2 giờ làm việc."
-            />
-          ) : (
-            <div className="mt-6 space-y-4">
-              <Field label="Họ và tên" name="name" placeholder="Tên của bạn" />
-              <Field label="Số điện thoại" name="phone" placeholder="0901 234 567" />
-              <label className="block text-sm font-bold">
-                Nội dung
-                <textarea
-                  className="mt-2 min-h-28 w-full rounded-xl border border-slate-200 p-4 font-normal outline-none focus:border-blue-500"
-                  placeholder="Bạn cần AKAH hỗ trợ điều gì?"
-                />
-              </label>
-              <Button className="w-full" onClick={() => setSent(true)}>
-                Gửi yêu cầu
-              </Button>
-            </div>
-          )}
-        </div>
-      </div>
-    </PageWrap>
-  );
+  const [sent, setSent] = useState(false)
+  return <div className="page container"><PageHeader label="LIÊN HỆ" title="Chúng tôi có thể hỗ trợ gì?" text="Gửi lời nhắn cho AKAH MOBILE. Thông tin liên hệ chính thức sẽ được cập nhật sau." /><div className="contact-layout"><div className="contact-info"><h2>Thông tin liên hệ</h2><div><span><Icon name="map" /></span><p><b>Địa chỉ</b>Đang cập nhật</p></div><div><span><Icon name="phone" /></span><p><b>Điện thoại</b>Đang cập nhật</p></div><div><span>@</span><p><b>Email</b>Đang cập nhật</p></div><small>Thời gian làm việc: Đang cập nhật</small></div><div className="contact-form">{sent ? <div className="message-sent"><span><Icon name="check" /></span><h2>Đã nhận lời nhắn demo</h2><p>Biểu mẫu chỉ minh họa giao diện, dữ liệu chưa được gửi hoặc lưu trữ.</p><button className="outline-btn" onClick={() => setSent(false)}>Gửi lời nhắn khác</button></div> : <form onSubmit={e => { e.preventDefault(); setSent(true) }}><h2>Gửi lời nhắn</h2><div className="form-grid"><label>Họ và tên<input required placeholder="Nhập họ và tên" /></label><label>Số điện thoại<input required placeholder="Nhập số điện thoại" /></label><label className="wide">Email<input type="email" required placeholder="email@example.com" /></label><label className="wide">Nội dung<textarea required placeholder="Bạn cần AKAH MOBILE hỗ trợ điều gì?" /></label></div><button className="primary-btn">Gửi lời nhắn <Icon name="arrow" /></button></form>}</div></div></div>
 }
 
-function Policy({ slug, navigate }: { slug: string; navigate: (r: string) => void }) {
-  const content = policyContent[slug] || policyContent["bao-hanh"];
-  return (
-    <PageWrap>
-      <Breadcrumb items={["Trang chủ", "Chính sách", content.title]} navigate={navigate} />
-      <div className="mx-auto max-w-3xl">
-        <p className="text-xs font-extrabold uppercase tracking-[.2em] text-blue-600">
-          Trung tâm hỗ trợ
-        </p>
-        <h1 className="mt-3 text-4xl font-black">{content.title}</h1>
-        <p className="mt-4 text-lg leading-8 text-slate-500">{content.intro}</p>
-        <div className="mt-9 space-y-4">
-          {content.points.map((p, i) => (
-            <div key={p} className="flex gap-4 rounded-2xl border border-slate-100 p-5">
-              <span className="grid size-8 shrink-0 place-items-center rounded-full bg-blue-50 text-sm font-black text-blue-600">
-                {i + 1}
-              </span>
-              <p className="pt-1 text-sm leading-6 text-slate-600">{p}</p>
-            </div>
-          ))}
-        </div>
-        <div className="mt-8 rounded-2xl bg-slate-950 p-6 text-white">
-          <h3 className="font-extrabold">Bạn vẫn cần hỗ trợ?</h3>
-          <p className="mt-1 text-sm text-slate-400">
-            Liên hệ đội ngũ AKAH MOBILE để được giải đáp nhanh chóng.
-          </p>
-          <Button className="mt-5" onClick={() => navigate("contact")}>
-            Liên hệ ngay
-          </Button>
-        </div>
-      </div>
-    </PageWrap>
-  );
+function Policy() {
+  return <div className="page container policy-page"><PageHeader label="THÔNG TIN" title="Chính sách & điều khoản" text="Nội dung dưới đây là khung minh họa và sẽ được cập nhật theo chính sách chính thức." /><div className="policy-layout"><nav><a href="#privacy">Bảo mật thông tin</a><a href="#order">Đặt hàng</a><a href="#payment">Thanh toán</a><a href="#support">Hỗ trợ</a></nav><article><section id="privacy"><h2>1. Bảo mật thông tin</h2><p>AKAH MOBILE tôn trọng quyền riêng tư của người dùng. Chính sách thu thập, sử dụng và bảo vệ dữ liệu chính thức đang được cập nhật.</p></section><section id="order"><h2>2. Chính sách đặt hàng</h2><p>Website hiện là prototype. Mọi sản phẩm, mức giá và thao tác đặt hàng đều là dữ liệu minh họa, không tạo đơn hàng hoặc nghĩa vụ mua bán thật.</p></section><section id="payment"><h2>3. Phương thức thanh toán</h2><p>Luồng COD và chuyển khoản được hiển thị để mô phỏng trải nghiệm. Hệ thống không thu tiền và không kết nối cổng thanh toán.</p></section><section id="support"><h2>4. Hỗ trợ khách hàng</h2><p>Thông tin về bảo hành, đổi trả, giao nhận và hỗ trợ sau bán hàng đang được cập nhật. Vui lòng xem lại khi website chính thức hoạt động.</p></section><p className="policy-updated">Cập nhật lần cuối: Đang cập nhật</p></article></div></div>
 }
 
-function Benefits() {
-  return (
-    <section className="border-y border-slate-100 bg-white">
-      <div className="mx-auto grid max-w-7xl grid-cols-2 gap-6 px-4 py-10 md:grid-cols-4 md:px-8">
-        {[
-          [Truck, "Giao hàng miễn phí", "Đơn từ 500.000₫"],
-          [ShieldCheck, "Chính hãng 100%", "Nguồn gốc minh bạch"],
-          [RefreshCw, "Đổi mới 30 ngày", "An tâm sử dụng"],
-          [Headphones, "Hỗ trợ tận tâm", "Tư vấn 7 ngày/tuần"],
-        ].map(([Icon, title, text]) => (
-          <div key={title as string} className="flex gap-3">
-            <Icon className="shrink-0 text-blue-600" size={25} />
-            <div>
-              <strong className="text-sm">{title as string}</strong>
-              <p className="mt-1 text-xs text-slate-400">{text as string}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
+function PageHeader({ label, title, text }: any) {
+  return <div className="page-header"><span>{label}</span><h1>{title}</h1>{text && <p>{text}</p>}</div>
 }
 
-function StatePanel({
-  type,
-  title,
-  text,
-  action,
-}: {
-  type: "empty" | "success" | "error";
-  title: string;
-  text: string;
-  action?: ReactNode;
-}) {
-  const Icon = type === "success" ? Check : type === "error" ? CircleHelp : Search;
-  return (
-    <div className="flex min-h-72 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
-      <span
-        className={`grid size-14 place-items-center rounded-full ${type === "success" ? "bg-emerald-100 text-emerald-600" : type === "error" ? "bg-red-100 text-red-600" : "bg-blue-100 text-blue-600"}`}
-      >
-        <Icon size={25} />
-      </span>
-      <h3 className="mt-4 text-lg font-extrabold">{title}</h3>
-      <p className="mt-2 max-w-sm text-sm text-slate-500">{text}</p>
-      {action && <div className="mt-6">{action}</div>}
-    </div>
-  );
+function EmptyState({ icon = 'search', title, text, action, onClick }: any) {
+  return <div className="empty-state"><span><Icon name={icon} size={30} /></span><h2>{title}</h2><p>{text}</p><button className="primary-btn" onClick={onClick}>{action}<Icon name="arrow" /></button></div>
 }
 
-function Breadcrumb({ items, navigate }: { items: string[]; navigate: (r: string) => void }) {
-  return (
-    <div className="mb-7 flex flex-wrap items-center gap-2 text-xs text-slate-400">
-      {items.map((item, i) => (
-        <span key={item} className="flex items-center gap-2">
-          {i > 0 && <ChevronRight size={13} />}
-          {i === 0 ? (
-            <button onClick={() => navigate("home")} className="hover:text-blue-600">
-              {item}
-            </button>
-          ) : (
-            <span className={i === items.length - 1 ? "text-slate-600" : ""}>{item}</span>
-          )}
-        </span>
-      ))}
-    </div>
-  );
+function NotFound({ navigate }: any) {
+  return <div className="page container"><EmptyState title="Không tìm thấy trang" text="Trang bạn đang tìm không tồn tại hoặc đã được thay đổi." action="Về trang chủ" onClick={() => navigate('home')} /></div>
 }
 
-function PageWrap({ children }: { children: ReactNode }) {
-  return (
-    <div className="mx-auto min-h-[600px] max-w-7xl px-4 py-10 md:px-8 md:py-14">{children}</div>
-  );
+function Footer({ navigate }: any) {
+  return <footer><div className="container footer-grid"><div><button className="logo footer-logo" onClick={() => navigate('home')}><span className="logo-mark">A</span><span>AKAH <b>MOBILE</b></span></button><p>Không gian mua sắm điện thoại và phụ kiện công nghệ hiện đại, rõ ràng và dễ dùng.</p></div><div><h3>Liên hệ</h3><p>Địa chỉ: Đang cập nhật</p><p>Điện thoại: Đang cập nhật</p><p>Email: Đang cập nhật</p></div><div><h3>Liên kết nhanh</h3><button onClick={() => navigate('store')}>Cửa hàng</button><button onClick={() => navigate('about')}>Giới thiệu</button><button onClick={() => navigate('contact')}>Liên hệ</button><button onClick={() => navigate('policy')}>Chính sách</button></div></div><div className="copyright"><div className="container"><span>© 2025 AKAH MOBILE. Giao diện prototype.</span><span>Không phát sinh giao dịch thật.</span></div></div></footer>
 }
 
-function Footer({ navigate }: { navigate: (r: string) => void }) {
-  const policies = Object.entries(policyContent);
-  return (
-    <footer className="bg-slate-950 text-slate-300">
-      <div className="mx-auto grid max-w-7xl gap-9 px-4 py-12 sm:grid-cols-2 lg:grid-cols-4 lg:px-8">
-        <div>
-          <button onClick={() => navigate("home")} className="flex items-center gap-2 text-white">
-            <span className="grid size-10 place-items-center rounded-xl bg-blue-600 text-lg font-black">
-              A
-            </span>
-            <span className="text-left">
-              <strong className="block leading-4">AKAH</strong>
-              <small className="text-[10px] font-bold tracking-[.18em] text-blue-400">MOBILE</small>
-            </span>
-          </button>
-          <p className="mt-5 text-sm leading-6 text-slate-400">
-            Hệ thống bán lẻ điện thoại và phụ kiện chính hãng, mang công nghệ tốt đến gần bạn hơn.
-          </p>
-          <p className="mt-4 text-sm font-bold text-white">Hotline: 1900 6868</p>
-        </div>
-        <FooterCol
-          title="Danh mục"
-          links={[
-            ["Điện thoại", "phones"],
-            ["Phụ kiện", "accessories"],
-            ["Thương hiệu", "phones"],
-            ["Sản phẩm nổi bật", "home"],
-          ]}
-          navigate={navigate}
-        />
-        <FooterCol
-          title="Hỗ trợ"
-          links={[
-            ["Giới thiệu", "about"],
-            ["Liên hệ", "contact"],
-            ["Tra cứu đơn hàng", "account"],
-            ["Tài khoản", "login"],
-          ]}
-          navigate={navigate}
-        />
-        <div>
-          <h3 className="mb-4 text-sm font-extrabold text-white">Chính sách</h3>
-          <div className="grid gap-2">
-            {policies.map(([slug, p]) => (
-              <button
-                key={slug}
-                onClick={() => navigate(`policy-${slug}`)}
-                className="text-left text-sm text-slate-400 hover:text-white"
-              >
-                {p.title}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-      <div className="border-t border-white/10">
-        <div className="mx-auto flex max-w-7xl flex-col justify-between gap-3 px-4 py-5 text-xs text-slate-500 sm:flex-row lg:px-8">
-          <span>
-            © 2025 AKAH MOBILE. Dữ liệu và giao dịch trong prototype chỉ mang tính minh họa.
-          </span>
-          <span>Thiết kế tại Việt Nam</span>
-        </div>
-      </div>
-    </footer>
-  );
-}
-
-function FooterCol({
-  title,
-  links,
-  navigate,
-}: {
-  title: string;
-  links: string[][];
-  navigate: (r: string) => void;
-}) {
-  return (
-    <div>
-      <h3 className="mb-4 text-sm font-extrabold text-white">{title}</h3>
-      <div className="grid gap-2">
-        {links.map(([label, route]) => (
-          <button
-            key={label}
-            onClick={() => navigate(route)}
-            className="text-left text-sm text-slate-400 hover:text-white"
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-export default App;
+export default App
